@@ -50,9 +50,7 @@ class HomeView extends ConsumerWidget {
               const SizedBox(height: 48),
 
               // Counter Display
-              Center(
-                child: CounterDisplay(count: homeState.counter),
-              ),
+              Center(child: CounterDisplay(count: homeState.counter)),
               const SizedBox(height: 48),
 
               // Action Buttons

@@ -6,17 +6,9 @@ class HomeState {
   final String? error;
   final int counter;
 
-  const HomeState({
-    this.isLoading = false,
-    this.error,
-    this.counter = 0,
-  });
+  const HomeState({this.isLoading = false, this.error, this.counter = 0});
 
-  HomeState copyWith({
-    bool? isLoading,
-    String? error,
-    int? counter,
-  }) {
+  HomeState copyWith({bool? isLoading, String? error, int? counter}) {
     return HomeState(
       isLoading: isLoading ?? this.isLoading,
       error: error,
@@ -58,7 +50,8 @@ class HomeController extends StateNotifier<HomeState> {
 }
 
 /// Home Controller Provider
-final homeControllerProvider =
-    StateNotifierProvider<HomeController, HomeState>((ref) {
-  return HomeController();
-});
+final homeControllerProvider = StateNotifierProvider<HomeController, HomeState>(
+  (ref) {
+    return HomeController();
+  },
+);

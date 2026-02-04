@@ -208,7 +208,9 @@ class AppButton extends StatelessWidget {
     if (backgroundColor != null) return backgroundColor!;
     switch (type) {
       case AppButtonType.primary:
-        return isDisabled ? AppColors.primary.withValues(alpha: 0.5) : AppColors.primary;
+        return isDisabled
+            ? AppColors.primary.withValues(alpha: 0.5)
+            : AppColors.primary;
       case AppButtonType.secondary:
         return Colors.transparent;
       case AppButtonType.outline:
@@ -222,13 +224,21 @@ class AppButton extends StatelessWidget {
     if (textColor != null) return textColor!;
     switch (type) {
       case AppButtonType.primary:
-        return isDisabled ? AppColors.textLight.withValues(alpha: 0.7) : AppColors.textLight;
+        return isDisabled
+            ? AppColors.textLight.withValues(alpha: 0.7)
+            : AppColors.textLight;
       case AppButtonType.secondary:
-        return isDisabled ? AppColors.primary.withValues(alpha: 0.5) : AppColors.primary;
+        return isDisabled
+            ? AppColors.primary.withValues(alpha: 0.5)
+            : AppColors.primary;
       case AppButtonType.outline:
-        return isDisabled ? AppColors.textSecondary.withValues(alpha: 0.5) : AppColors.textSecondary;
+        return isDisabled
+            ? AppColors.textSecondary.withValues(alpha: 0.5)
+            : AppColors.textSecondary;
       case AppButtonType.text:
-        return isDisabled ? AppColors.primary.withValues(alpha: 0.5) : AppColors.primary;
+        return isDisabled
+            ? AppColors.primary.withValues(alpha: 0.5)
+            : AppColors.primary;
     }
   }
 
@@ -238,9 +248,13 @@ class AppButton extends StatelessWidget {
       case AppButtonType.primary:
         return Colors.transparent;
       case AppButtonType.secondary:
-        return isDisabled ? AppColors.primary.withValues(alpha: 0.5) : AppColors.primary;
+        return isDisabled
+            ? AppColors.primary.withValues(alpha: 0.5)
+            : AppColors.primary;
       case AppButtonType.outline:
-        return isDisabled ? AppColors.border.withValues(alpha: 0.5) : AppColors.border;
+        return isDisabled
+            ? AppColors.border.withValues(alpha: 0.5)
+            : AppColors.border;
       case AppButtonType.text:
         return Colors.transparent;
     }
@@ -269,10 +283,7 @@ class AppButton extends StatelessWidget {
           Icon(icon, size: _iconSize, color: _foregroundColor),
           const SizedBox(width: 8),
         ],
-        Text(
-          text,
-          style: _textStyle.copyWith(color: _foregroundColor),
-        ),
+        Text(text, style: _textStyle.copyWith(color: _foregroundColor)),
         if (suffixIcon != null && !isLoading) ...[
           const SizedBox(width: 8),
           Icon(suffixIcon, size: _iconSize, color: _foregroundColor),

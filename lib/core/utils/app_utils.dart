@@ -6,16 +6,16 @@ class NavigationUtils {
 
   /// Push a new route
   static Future<T?> push<T>(BuildContext context, Widget page) {
-    return Navigator.of(context).push<T>(
-      MaterialPageRoute(builder: (_) => page),
-    );
+    return Navigator.of(
+      context,
+    ).push<T>(MaterialPageRoute(builder: (_) => page));
   }
 
   /// Push and replace current route
   static Future<T?> pushReplacement<T, TO>(BuildContext context, Widget page) {
-    return Navigator.of(context).pushReplacement<T, TO>(
-      MaterialPageRoute(builder: (_) => page),
-    );
+    return Navigator.of(
+      context,
+    ).pushReplacement<T, TO>(MaterialPageRoute(builder: (_) => page));
   }
 
   /// Push and remove all routes
@@ -66,10 +66,7 @@ class SnackBarUtils {
   /// Show info snackbar
   static void showInfo(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        behavior: SnackBarBehavior.floating,
-      ),
+      SnackBar(content: Text(message), behavior: SnackBarBehavior.floating),
     );
   }
 }

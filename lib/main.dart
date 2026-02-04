@@ -5,11 +5,7 @@ import 'features/home/view/home_view.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(
-    const ProviderScope(
-      child: GeoLinkedApp(),
-    ),
-  );
+  runApp(const ProviderScope(child: GeoLinkedApp()));
 }
 
 class GeoLinkedApp extends StatelessWidget {
