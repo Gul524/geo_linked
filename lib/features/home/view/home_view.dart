@@ -5,7 +5,6 @@ import '../../../shared/widgets/widgets.dart';
 import '../controller/controller.dart';
 import '../widgets/widgets.dart';
 
-/// Home Screen - Main screen of the app
 class HomeView extends ConsumerWidget {
   const HomeView({super.key});
 
@@ -78,7 +77,6 @@ class HomeView extends ConsumerWidget {
               AppButton.primary(
                 text: 'Get Started',
                 onPressed: () {
-                  // Navigate to next screen
                 },
                 size: AppButtonSize.large,
                 width: double.infinity,
@@ -89,7 +87,6 @@ class HomeView extends ConsumerWidget {
               AppButton.outline(
                 text: 'Learn More',
                 onPressed: () {
-                  // Show info
                 },
                 size: AppButtonSize.medium,
                 width: double.infinity,
