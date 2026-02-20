@@ -1,0 +1,46 @@
+name: Flutter DevSecOps Pipeline
+
+on:
+  push:
+    branches: [ main ]  # Runs every time you push to main
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  secure_and_build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      # --- DEVSECOPS STEP: INFORMATION COLLECTION ---
+      - name: Scan for Vulnerable Packages
+        run: flutter pub deps --json
+
+      - name: Static Code Analysis (Hacker's View)
+        run: flutter analyze
+
+      # --- DEVOPS STEP: AUTOMATED BUILD ---
+      - name: Build Android APK
+        run: flutter build apk --debug
+
+      - name: Upload APK for Download
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk

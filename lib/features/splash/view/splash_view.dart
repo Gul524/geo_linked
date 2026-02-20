@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geo_linked/shared/widgets/app_shimmer.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_text.dart';
-import '../../home/view/home_view.dart';
+import '../../login/view/login_view.dart';
 import '../controller/controller.dart';
 import '../widgets/widgets.dart';
 
@@ -18,7 +19,7 @@ class _SplashViewState extends ConsumerState<SplashView> {
   @override
   void initState() {
     super.initState();
-    _initializeApp();
+    // _initializeApp();
   }
 
   Future<void> _initializeApp() async {
@@ -27,7 +28,7 @@ class _SplashViewState extends ConsumerState<SplashView> {
     if (mounted) {
       Navigator.of(
         context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeView()));
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginView()));
     }
   }
 
@@ -45,13 +46,9 @@ class _SplashViewState extends ConsumerState<SplashView> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Spacer(flex: 2),
-
-                // Logo
                 const SplashLogo(size: 120),
                 const SizedBox(height: 32),
-
-                // App Name
-                AppText.h2('GeoLinked', color: AppColors.primary),
+                AppText.h2('GeoLinked'),
                 const SizedBox(height: 8),
                 AppText.body(
                   'Connect with your world',
@@ -60,10 +57,17 @@ class _SplashViewState extends ConsumerState<SplashView> {
 
                 const Spacer(flex: 2),
 
-                // Loading Indicator
                 SplashLoadingIndicator(progress: splashState.progress),
 
                 const SizedBox(height: 48),
+
+                // ShimmerEffectLayer(
+                //   child: Container(
+                //     width: 200,
+                //     height: 20,
+                //     color: AppColors.primary,
+                //   ),
+                // ),
 
                 // Footer
                 AppText.caption('Version 1.0.0'),

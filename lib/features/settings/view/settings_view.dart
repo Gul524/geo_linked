@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_text.dart';
+import '../../login/view/login_view.dart';
 import '../controller/controller.dart';
 import '../widgets/widgets.dart';
 
@@ -244,7 +245,11 @@ class SettingsView extends ConsumerWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // Perform logout
+              // Navigate to login and clear stack
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (_) => const LoginView()),
+                (route) => false,
+              );
             },
             child: const Text(
               'Log Out',
