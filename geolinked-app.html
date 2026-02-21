@@ -1,0 +1,2462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>GeoLinked – Live Local Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════
+   RESET & ROOT
+═══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+:root {
+  --cobalt: #0047AB;
+  --sky: #00BFFF;
+  --red: #FF3B30;
+  --orange: #FF9500;
+  --green: #34C759;
+  --purple: #AF52DE;
+  --bg-dark: #080e1c;
+  --bg-card: #0d1a35;
+  --glass: rgba(255,255,255,0.08);
+  --glass-border: rgba(255,255,255,0.12);
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255,255,255,0.6);
+  --text-muted: rgba(255,255,255,0.3);
+  --font: 'Nunito', -apple-system, sans-serif;
+  --nav-h: 80px;
+  --safe-bottom: 20px;
+}
+
+html, body {
+  width: 100%; height: 100%;
+  font-family: var(--font);
+  background: #050a14;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════
+   PHONE SHELL
+═══════════════════════════════════════════ */
+#phone {
+  width: 393px;
+  height: 852px;
+  background: var(--bg-dark);
+  border-radius: 52px;
+  overflow: hidden;
+  position: relative;
+  box-shadow:
+    0 0 0 10px #111,
+    0 0 0 11px #222,
+    0 40px 100px rgba(0,0,0,0.8),
+    0 0 80px rgba(0,71,171,0.08);
+  flex-shrink: 0;
+}
+
+/* Notch */
+#phone::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 120px; height: 34px;
+  background: #111;
+  border-radius: 0 0 22px 22px;
+  z-index: 9999;
+}
+
+/* Status bar */
+.status-bar {
+  height: 50px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 28px 8px;
+  position: relative;
+  z-index: 100;
+  flex-shrink: 0;
+}
+.status-bar .time { font-size: 15px; font-weight: 800; color: var(--text-primary); }
+.status-bar .icons { display: flex; gap: 5px; align-items: center; font-size: 12px; color: var(--text-primary); }
+
+/* ═══════════════════════════════════════════
+   SCREEN SYSTEM
+═══════════════════════════════════════════ */
+.screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.4,0,0.2,1);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(30px);
+}
+.screen.active {
+  opacity: 1;
+  pointer-events: all;
+  transform: translateX(0);
+}
+.screen.slide-left { transform: translateX(-30px); }
+
+/* ═══════════════════════════════════════════
+   BOTTOM NAV
+═══════════════════════════════════════════ */
+.bottom-nav {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: var(--nav-h);
+  background: rgba(8,14,28,0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 8px 16px;
+  z-index: 500;
+}
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+.nav-item.active { background: rgba(0,71,171,0.15); }
+.nav-item svg { width: 24px; height: 24px; }
+.nav-item span {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  transition: color 0.2s;
+}
+.nav-item.active span { color: var(--sky); }
+.nav-item.active svg { filter: drop-shadow(0 0 6px rgba(0,191,255,0.6)); }
+.nav-badge {
+  position: absolute;
+  top: 4px; right: 8px;
+  width: 8px; height: 8px;
+  background: var(--red);
+  border-radius: 50%;
+  border: 1.5px solid var(--bg-dark);
+}
+
+/* ═══════════════════════════════════════════
+   COMMON COMPONENTS
+═══════════════════════════════════════════ */
+.btn-primary {
+  width: 100%; padding: 16px;
+  background: linear-gradient(135deg, var(--cobalt), #0070e0);
+  color: white; font-family: var(--font); font-size: 16px; font-weight: 800;
+  border: none; border-radius: 18px; cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0,71,171,0.4);
+  letter-spacing: -0.2px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn-primary:active { transform: scale(0.97); box-shadow: 0 4px 12px rgba(0,71,171,0.3); }
+
+.glass-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  backdrop-filter: blur(20px);
+}
+
+.chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 5px 11px;
+  border-radius: 20px;
+  font-size: 11px; font-weight: 700;
+}
+
+/* Page scroll container */
+.page-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: calc(var(--nav-h) + 16px);
+}
+.page-content::-webkit-scrollbar { display: none; }
+
+/* Section header */
+.section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.section-title { font-size: 18px; font-weight: 800; color: var(--text-primary); }
+.section-link { font-size: 13px; font-weight: 700; color: var(--sky); cursor: pointer; }
+
+/* ══════════════════════════════════════════════════════
+   SCREEN 1: SPLASH
+══════════════════════════════════════════════════════ */
+#screen-splash {
+  background: radial-gradient(ellipse 80% 60% at 50% 30%, #0a1f50 0%, #050b18 60%);
+  justify-content: center;
+  align-items: center;
+}
+.splash-logo {
+  display: flex; flex-direction: column; align-items: center; gap: 20px;
+  animation: splashFadeIn 1s ease forwards;
+}
+@keyframes splashFadeIn {
+  from { opacity: 0; transform: scale(0.8) translateY(20px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+.splash-radar {
+  animation: radarPulse 2.5s ease-in-out infinite;
+}
+@keyframes radarPulse {
+  0%,100% { filter: drop-shadow(0 0 20px rgba(0,191,255,0.4)); }
+  50%      { filter: drop-shadow(0 0 40px rgba(0,191,255,0.8)); }
+}
+@keyframes sweepRotate {
+  from { transform-origin: 60px 60px; transform: rotate(0deg); }
+  to   { transform-origin: 60px 60px; transform: rotate(360deg); }
+}
+.sweep-anim { animation: sweepRotate 3s linear infinite; transform-origin: 60px 60px; }
+
+.splash-name {
+  font-size: 38px; font-weight: 900;
+  color: white; letter-spacing: -1px;
+}
+.splash-name span { color: var(--sky); }
+.splash-tag {
+  font-size: 14px; font-weight: 600;
+  color: var(--text-secondary); letter-spacing: 0.5px;
+  margin-top: -12px;
+}
+.splash-progress {
+  width: 120px; height: 3px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 20px;
+}
+.splash-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cobalt), var(--sky));
+  border-radius: 2px;
+  animation: progressFill 2.5s ease forwards;
+}
+@keyframes progressFill {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+/* ══════════════════════════════════════════════════════
+   SCREEN 2: ONBOARDING
+══════════════════════════════════════════════════════ */
+#screen-onboard {
+  background: linear-gradient(170deg, #060e20 0%, #0a1530 100%);
+}
+.ob-slide {
+  display: none;
+  flex: 1;
+  flex-direction: column;
+}
+.ob-slide.active { display: flex; animation: obSlideIn 0.4s ease; }
+@keyframes obSlideIn {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.ob-visual {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  position: relative;
+}
+.ob-bottom {
+  padding: 24px 28px 40px;
+}
+.ob-step { font-size: 11px; font-weight: 800; letter-spacing: 2px; color: var(--sky); margin-bottom: 10px; text-transform: uppercase; }
+.ob-title { font-size: 28px; font-weight: 900; color: white; line-height: 1.15; margin-bottom: 10px; letter-spacing: -0.5px; }
+.ob-title em { color: var(--sky); font-style: normal; }
+.ob-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 28px; }
+.ob-nav { display: flex; align-items: center; justify-content: space-between; }
+.ob-dots { display: flex; gap: 6px; }
+.ob-dot { width: 6px; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.2); transition: all 0.3s; }
+.ob-dot.on { width: 22px; background: linear-gradient(90deg, var(--cobalt), var(--sky)); }
+.ob-next {
+  width: 54px; height: 54px;
+  background: linear-gradient(135deg, var(--cobalt), #0070e0);
+  border-radius: 18px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0,71,171,0.5);
+  font-size: 22px; color: white; font-weight: 900;
+  transition: transform 0.15s;
+}
+.ob-next:active { transform: scale(0.92); }
+.ob-skip { font-size: 13px; font-weight: 700; color: var(--text-muted); cursor: pointer; }
+.ob-getstarted {
+  width: auto; padding: 16px 24px;
+  background: linear-gradient(135deg, var(--green), #28a745);
+  border-radius: 18px;
+  font-size: 16px; font-weight: 800; color: white;
+  border: none; cursor: pointer;
+  box-shadow: 0 8px 24px rgba(52,199,89,0.4);
+  letter-spacing: -0.2px;
+  transition: transform 0.15s;
+}
+.ob-getstarted:active { transform: scale(0.96); }
+
+/* Onboarding illustrations */
+.map-3d {
+  width: 310px; height: 240px;
+  background: linear-gradient(135deg, #0d2550 0%, #0a1e44 100%);
+  border-radius: 24px;
+  border: 1px solid rgba(0,191,255,0.15);
+  position: relative; overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 30px rgba(0,71,171,0.2);
+  transform: perspective(600px) rotateX(8deg);
+}
+.map-grid-lines {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(0,191,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(0,191,255,0.08) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.map-road { position: absolute; background: rgba(255,255,255,0.15); border-radius: 4px; }
+.map-event {
+  position: absolute;
+  width: 36px; height: 36px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 17px;
+  transform: translate(-50%, -50%);
+}
+.pulse-ring {
+  position: absolute;
+  border-radius: 50%;
+  animation: pulseOut 2s ease-out infinite;
+}
+@keyframes pulseOut {
+  0% { transform: translate(-50%,-50%) scale(0.5); opacity: 0.8; }
+  100% { transform: translate(-50%,-50%) scale(2); opacity: 0; }
+}
+
+/* Radar visual ob2 */
+.ob2-radar {
+  position: relative;
+  width: 260px; height: 260px;
+}
+.ob2-ring {
+  position: absolute; border-radius: 50%;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  border: 1.5px solid;
+}
+.ob2-sweep { animation: sweepRotate2 4s linear infinite; }
+@keyframes sweepRotate2 {
+  from { transform: translate(-50%,-50%) rotate(0deg); }
+  to { transform: translate(-50%,-50%) rotate(360deg); }
+}
+
+/* ══════════════════════════════════════════════════════
+   SCREEN 3: AUTH
+══════════════════════════════════════════════════════ */
+#screen-auth {
+  background: linear-gradient(160deg, #060d1e 0%, #0a1530 100%);
+}
+.auth-hero {
+  padding: 60px 28px 32px;
+  background: linear-gradient(135deg, rgba(0,71,171,0.3) 0%, rgba(0,191,255,0.1) 100%);
+  position: relative; overflow: hidden;
+}
+.auth-hero::after {
+  content: '';
+  position: absolute;
+  width: 250px; height: 250px;
+  background: radial-gradient(circle, rgba(0,191,255,0.12) 0%, transparent 70%);
+  top: -80px; right: -60px;
+  border-radius: 50%;
+}
+.auth-title { font-size: 32px; font-weight: 900; color: white; line-height: 1.1; position: relative; z-index: 1; }
+.auth-title span { color: var(--sky); }
+.auth-sub { font-size: 15px; color: var(--text-secondary); margin-top: 8px; position: relative; z-index: 1; }
+
+.auth-body { flex: 1; padding: 28px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; }
+.auth-body::-webkit-scrollbar { display: none; }
+
+.social-btn {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; padding: 15px 18px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  font-family: var(--font); font-size: 15px; font-weight: 700; color: white;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
+}
+.social-btn:active { transform: scale(0.97); background: rgba(255,255,255,0.12); }
+.social-icon { width: 22px; height: 22px; }
+
+.divider {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 13px; font-weight: 700; color: var(--text-muted);
+}
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--glass-border); }
+
+.input-group { position: relative; }
+.input-label { font-size: 12px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+.input-field {
+  width: 100%; padding: 14px 16px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  font-family: var(--font); font-size: 15px; color: white;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.input-field:focus { border-color: var(--sky); }
+.input-field::placeholder { color: var(--text-muted); }
+
+.phone-row { display: flex; gap: 10px; }
+.flag-btn {
+  padding: 14px 16px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  color: var(--text-secondary); font-size: 13px; font-weight: 700;
+  white-space: nowrap;
+}
+.security-badge {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+  background: rgba(52,199,89,0.08);
+  border: 1px solid rgba(52,199,89,0.15);
+  border-radius: 16px;
+}
+.security-badge .badge-icon { font-size: 22px; }
+.security-badge .badge-title { font-size: 13px; font-weight: 800; color: var(--green); }
+.security-badge .badge-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+/* ══════════════════════════════════════════════════════
+   SCREEN 4: HOME MAP
+══════════════════════════════════════════════════════ */
+#screen-home {
+  background: #0b1628;
+}
+
+/* Simulated map */
+.map-canvas {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, #0d2040 0%, #152a50 40%, #0f2040 100%);
+  overflow: hidden;
+}
+.map-canvas .grid {
+  position: absolute; inset: 0;
+  background-image: linear-gradient(rgba(0,100,200,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(0,100,200,0.07) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+.map-road-h { position: absolute; background: rgba(255,255,255,0.18); border-radius: 4px; }
+.map-road-v { position: absolute; background: rgba(255,255,255,0.18); border-radius: 4px; }
+
+/* Map markers */
+.map-marker {
+  position: absolute;
+  display: flex; flex-direction: column; align-items: center;
+  transform: translate(-50%, -100%);
+  cursor: pointer;
+  z-index: 10;
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.map-marker:hover { transform: translate(-50%, -100%) scale(1.15); }
+.map-marker:active { transform: translate(-50%, -100%) scale(0.9); }
+.marker-pin {
+  width: 42px; height: 42px;
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+  position: relative;
+}
+.marker-tail {
+  width: 0; height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  margin-top: -1px;
+}
+.marker-pulse {
+  position: absolute; inset: -8px;
+  border-radius: 18px;
+  border: 2px solid;
+  animation: markerPulse 2s ease-out infinite;
+  pointer-events: none;
+}
+@keyframes markerPulse {
+  0% { opacity: 0.6; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+
+/* Alert drop banner */
+.alert-drop {
+  position: absolute;
+  top: 60px; left: 50%; transform: translateX(-50%);
+  z-index: 200;
+  padding: 11px 18px;
+  border-radius: 16px;
+  display: flex; align-items: center; gap: 10px;
+  white-space: nowrap;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  transition: all 0.5s ease;
+  cursor: pointer;
+}
+.alert-drop.hidden { top: -60px; opacity: 0; pointer-events: none; }
+.alert-drop-text { font-size: 13px; font-weight: 700; }
+
+/* Top search bar */
+.map-topbar {
+  position: absolute;
+  top: 50px; left: 0; right: 0;
+  z-index: 50;
+  padding: 10px 14px;
+  display: flex; gap: 10px;
+}
+.search-pill {
+  flex: 1; display: flex; align-items: center; gap: 9px;
+  padding: 12px 16px;
+  background: rgba(8,14,28,0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.search-pill input {
+  flex: 1; background: none; border: none; outline: none;
+  font-family: var(--font); font-size: 14px; color: white;
+}
+.search-pill input::placeholder { color: var(--text-muted); }
+.filter-btn {
+  padding: 12px 14px;
+  background: rgba(8,14,28,0.8);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  font-size: 13px; font-weight: 700; color: var(--sky);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Filter chips row */
+.filter-row {
+  position: absolute;
+  top: 112px; left: 0; right: 0;
+  z-index: 50;
+  display: flex; gap: 8px; padding: 0 14px;
+  overflow-x: auto;
+}
+.filter-row::-webkit-scrollbar { display: none; }
+.filter-chip {
+  padding: 7px 14px;
+  background: rgba(8,14,28,0.8);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  font-size: 12px; font-weight: 700; color: var(--text-secondary);
+  white-space: nowrap; cursor: pointer;
+  transition: all 0.2s;
+}
+.filter-chip.active {
+  background: var(--cobalt); color: white; border-color: var(--cobalt);
+  box-shadow: 0 4px 12px rgba(0,71,171,0.4);
+}
+
+/* FAB */
+.fab-container {
+  position: absolute;
+  bottom: calc(var(--nav-h) + 16px);
+  left: 50%; transform: translateX(-50%);
+  z-index: 100;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+}
+.fab-options {
+  display: flex; gap: 12px;
+  transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  opacity: 0; transform: translateY(20px) scale(0.8);
+  pointer-events: none;
+}
+.fab-options.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
+.fab-option {
+  background: rgba(8,14,28,0.9);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  padding: 14px 18px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  transition: transform 0.15s;
+  min-width: 110px;
+}
+.fab-option:active { transform: scale(0.95); }
+.fab-option .fo-icon { font-size: 26px; }
+.fab-option .fo-label { font-size: 12px; font-weight: 700; color: white; text-align: center; line-height: 1.3; }
+.fab-option .fo-sub { font-size: 10px; font-weight: 600; color: var(--text-muted); }
+.fab-main {
+  width: 62px; height: 62px;
+  background: linear-gradient(135deg, var(--cobalt), #0070e0);
+  border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; cursor: pointer;
+  box-shadow: 0 10px 32px rgba(0,71,171,0.5);
+  font-size: 28px; color: white;
+  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.fab-main.open { transform: rotate(45deg); background: linear-gradient(135deg, #333, #555); }
+.fab-main:active { transform: scale(0.9); }
+
+/* You-are-here pin */
+.you-pin {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+}
+.you-dot {
+  width: 16px; height: 16px;
+  background: var(--sky);
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 0 0 8px rgba(0,191,255,0.2), 0 4px 12px rgba(0,191,255,0.4);
+}
+.you-pulse {
+  position: absolute;
+  width: 60px; height: 60px;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  border: 2px solid rgba(0,191,255,0.3);
+  border-radius: 50%;
+  animation: youPulse 2.5s ease-out infinite;
+}
+@keyframes youPulse {
+  0% { transform: translate(-50%,-50%) scale(0.3); opacity: 0.8; }
+  100% { transform: translate(-50%,-50%) scale(1); opacity: 0; }
+}
+
+/* ══════════════════════════════════════════════════════
+   SCREEN 5: ASK QUESTION
+══════════════════════════════════════════════════════ */
+#screen-ask {
+  background: #0b1628;
+}
+.ask-map { position: absolute; inset: 0; background: linear-gradient(180deg, #0d2040 0%, #152a50 100%); }
+.ask-map .grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(0,100,200,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(0,100,200,0.07) 1px, transparent 1px); background-size: 36px 36px; }
+
+.radius-circle {
+  position: absolute;
+  border-radius: 50%;
+  left: 50%; top: 42%;
+  transform: translate(-50%,-50%);
+  pointer-events: none;
+}
+.rc-outer {
+  width: 260px; height: 260px;
+  background: rgba(0,71,171,0.06);
+  border: 1.5px dashed rgba(0,71,171,0.35);
+  animation: rcPulse 3s ease-in-out infinite;
+}
+.rc-inner {
+  width: 110px; height: 110px;
+  background: rgba(0,191,255,0.08);
+  border: 1.5px solid rgba(0,191,255,0.35);
+}
+@keyframes rcPulse { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
+
+.ask-sheet {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: rgba(8,14,28,0.95);
+  backdrop-filter: blur(30px);
+  border-radius: 28px 28px 0 0;
+  border-top: 1px solid var(--glass-border);
+  padding: 20px 22px 40px;
+  z-index: 80;
+}
+.sheet-handle { width: 40px; height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; margin: 0 auto 20px; }
+.sheet-title { font-size: 20px; font-weight: 900; color: white; margin-bottom: 6px; }
+.sheet-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 14px; }
+.range-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(0,71,171,0.15);
+  border: 1px solid rgba(0,71,171,0.3);
+  border-radius: 10px;
+  padding: 5px 12px;
+  font-size: 12px; font-weight: 700; color: var(--sky);
+  margin-bottom: 16px;
+}
+.ask-textarea {
+  width: 100%;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 14px 16px;
+  font-family: var(--font); font-size: 15px; color: white;
+  resize: none; outline: none; height: 90px;
+  margin-bottom: 14px;
+  transition: border-color 0.2s;
+}
+.ask-textarea:focus { border-color: var(--sky); }
+.ask-textarea::placeholder { color: var(--text-muted); }
+
+.ask-topbar {
+  position: absolute; top: 50px; left: 0; right: 0; z-index: 90;
+  display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+}
+.back-btn {
+  width: 40px; height: 40px;
+  background: rgba(8,14,28,0.8);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 13px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 18px;
+  flex-shrink: 0;
+}
+.ask-topbar-title {
+  flex: 1;
+  background: rgba(8,14,28,0.8);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 14px; font-weight: 700; color: var(--text-secondary);
+}
+.range-label-map {
+  position: absolute;
+  background: rgba(0,71,171,0.2);
+  border: 1px solid rgba(0,71,171,0.4);
+  border-radius: 10px;
+  padding: 4px 10px;
+  font-size: 11px; font-weight: 700; color: var(--sky);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════════════════════════════
+   SCREEN 6: BROADCAST
+══════════════════════════════════════════════════════ */
+#screen-broadcast {
+  background: linear-gradient(170deg, #060e20 0%, #0a1530 100%);
+}
+.broadcast-header {
+  padding: 50px 22px 20px;
+  background: linear-gradient(135deg, rgba(0,71,171,0.2), rgba(0,191,255,0.05));
+  border-bottom: 1px solid var(--glass-border);
+}
+.broadcast-title { font-size: 22px; font-weight: 900; color: white; }
+.broadcast-sub { font-size: 13px; color: var(--text-secondary); margin-top: 3px; }
+.broadcast-area {
+  display: flex; flex-direction: column; gap: 14px;
+  padding: 20px 16px;
+}
+.broadcast-type-row { display: flex; gap: 10px; }
+.btype-btn {
+  flex: 1; padding: 14px 10px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  cursor: pointer; transition: all 0.2s;
+}
+.btype-btn.selected {
+  background: rgba(0,71,171,0.2);
+  border-color: var(--cobalt);
+  box-shadow: 0 4px 16px rgba(0,71,171,0.25);
+}
+.btype-btn .bt-icon { font-size: 22px; }
+.btype-btn .bt-label { font-size: 12px; font-weight: 700; color: white; }
+.btype-btn .bt-sub { font-size: 10px; color: var(--text-muted); }
+
+/* ══════════════════════════════════════════════════════
+   SCREEN 7: FEED
+══════════════════════════════════════════════════════ */
+#screen-feed {
+  background: linear-gradient(170deg, #060e20 0%, #0a1530 100%);
+}
+.feed-header {
+  padding: 50px 22px 16px;
+  background: linear-gradient(135deg, rgba(0,71,171,0.15), transparent);
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+.feed-header-top { display: flex; align-items: center; justify-content: space-between; }
+.feed-title { font-size: 22px; font-weight: 900; color: white; }
+.live-badge {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 10px;
+  background: rgba(255,59,48,0.15);
+  border: 1px solid rgba(255,59,48,0.3);
+  border-radius: 10px;
+  font-size: 11px; font-weight: 800; color: var(--red);
+}
+.live-dot-anim {
+  width: 6px; height: 6px;
+  background: var(--red); border-radius: 50%;
+  animation: liveBlink 1.2s ease-in-out infinite;
+}
+@keyframes liveBlink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+.feed-tabs {
+  display: flex; gap: 0;
+  margin-top: 14px;
+  background: var(--glass);
+  border-radius: 12px;
+  padding: 3px;
+}
+.feed-tab {
+  flex: 1; padding: 8px;
+  border-radius: 10px;
+  font-size: 13px; font-weight: 700; color: var(--text-muted);
+  text-align: center; cursor: pointer; transition: all 0.2s;
+}
+.feed-tab.active { background: var(--cobalt); color: white; box-shadow: 0 3px 10px rgba(0,71,171,0.4); }
+
+.alert-card {
+  display: flex; gap: 12px;
+  padding: 16px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  margin: 0 16px 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+.alert-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 3px 0 0 3px;
+}
+.alert-card:active { transform: scale(0.98); background: rgba(255,255,255,0.1); }
+.alert-icon-box {
+  width: 46px; height: 46px; flex-shrink: 0;
+  border-radius: 15px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+}
+.alert-content { flex: 1; min-width: 0; }
+.alert-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
+.alert-type { font-size: 10px; font-weight: 800; letter-spacing: 0.8px; text-transform: uppercase; }
+.alert-time { font-size: 11px; color: var(--text-muted); font-weight: 600; }
+.alert-msg { font-size: 13px; color: var(--text-primary); line-height: 1.45; margin-bottom: 8px; font-weight: 600; }
+.alert-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.alert-chip {
+  padding: 3px 8px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 8px;
+  font-size: 10px; font-weight: 700; color: var(--text-secondary);
+}
+
+/* ══════════════════════════════════════════════════════
+   SCREEN 8: CHAT
+══════════════════════════════════════════════════════ */
+#screen-chat {
+  background: #080e1c;
+}
+.chat-header {
+  padding: 50px 16px 16px;
+  background: rgba(8,14,28,0.9);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+.chat-back { display: flex; align-items: center; gap: 8px; color: var(--sky); font-size: 15px; font-weight: 700; cursor: pointer; margin-bottom: 12px; }
+.chat-loc-name { font-size: 17px; font-weight: 800; color: white; }
+.chat-loc-sub { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+.chat-status-row { display: flex; gap: 8px; align-items: center; margin-top: 10px; }
+
+.question-bubble {
+  margin: 14px 16px;
+  background: linear-gradient(135deg, var(--cobalt), #0060d0);
+  border-radius: 18px 18px 18px 4px;
+  padding: 14px 16px;
+  box-shadow: 0 6px 20px rgba(0,71,171,0.3);
+  flex-shrink: 0;
+}
+.qb-label { font-size: 10px; font-weight: 800; letter-spacing: 1px; color: rgba(255,255,255,0.6); margin-bottom: 5px; text-transform: uppercase; }
+.qb-text { font-size: 15px; color: white; line-height: 1.5; font-weight: 600; }
+
+.messages-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 16px;
+}
+.messages-list::-webkit-scrollbar { display: none; }
+
+.msg { margin-bottom: 16px; }
+.msg-bubble {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px 16px 16px 4px;
+  padding: 12px 14px;
+  font-size: 14px; color: var(--text-primary); line-height: 1.5; font-weight: 600;
+  max-width: 85%;
+}
+.msg-bubble.mine {
+  background: rgba(0,71,171,0.2);
+  border-color: rgba(0,71,171,0.3);
+  border-radius: 16px 16px 4px 16px;
+  margin-left: auto;
+}
+.msg-meta { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+.msg-user { font-size: 11px; font-weight: 700; color: var(--text-secondary); }
+.msg-time { font-size: 11px; color: var(--text-muted); }
+.msg-meta.mine { justify-content: flex-end; }
+.verify-row { display: flex; gap: 8px; margin-top: 8px; }
+.verify-btn {
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 11px; font-weight: 700;
+  border: 1px solid;
+  cursor: pointer; font-family: var(--font);
+  transition: all 0.15s;
+}
+.verify-btn:active { transform: scale(0.95); }
+.verify-yes { background: rgba(52,199,89,0.1); border-color: rgba(52,199,89,0.3); color: var(--green); }
+.verify-yes.voted { background: rgba(52,199,89,0.25); }
+.verify-no { background: rgba(255,59,48,0.1); border-color: rgba(255,59,48,0.3); color: var(--red); }
+
+.chat-input-bar {
+  padding: 12px 16px 32px;
+  background: rgba(8,14,28,0.9);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--glass-border);
+  display: flex; gap: 10px; align-items: center;
+  flex-shrink: 0;
+}
+.chat-input {
+  flex: 1; padding: 12px 15px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  font-family: var(--font); font-size: 15px; color: white;
+  outline: none;
+}
+.chat-input::placeholder { color: var(--text-muted); }
+.chat-send {
+  width: 42px; height: 42px;
+  background: linear-gradient(135deg, var(--cobalt), #0070e0);
+  border-radius: 14px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,71,171,0.4);
+  font-size: 18px;
+  transition: transform 0.15s;
+}
+.chat-send:active { transform: scale(0.9); }
+
+.resolve-banner {
+  margin: 8px 16px;
+  padding: 12px 16px;
+  background: rgba(52,199,89,0.08);
+  border: 1px solid rgba(52,199,89,0.2);
+  border-radius: 16px;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.resolve-banner:active { background: rgba(52,199,89,0.15); }
+
+/* ══════════════════════════════════════════════════════
+   SCREEN 9: ASK HISTORY
+══════════════════════════════════════════════════════ */
+#screen-history {
+  background: linear-gradient(170deg, #060e20 0%, #0a1530 100%);
+}
+.history-header {
+  padding: 50px 22px 16px;
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+.history-title { font-size: 22px; font-weight: 900; color: white; }
+.seg-control {
+  display: flex; gap: 0;
+  margin-top: 14px;
+  background: var(--glass);
+  border-radius: 12px;
+  padding: 3px;
+}
+.seg-btn {
+  flex: 1; padding: 8px;
+  border-radius: 10px;
+  font-size: 13px; font-weight: 700; color: var(--text-muted);
+  text-align: center; cursor: pointer; transition: all 0.2s;
+}
+.seg-btn.active { background: var(--cobalt); color: white; }
+
+.history-card {
+  display: flex; gap: 12px;
+  padding: 16px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  margin: 0 16px 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.history-card:active { transform: scale(0.98); }
+.history-map-thumb {
+  width: 56px; height: 56px; flex-shrink: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #0d2550, #0a1e44);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  border: 1px solid rgba(0,191,255,0.15);
+}
+.history-body { flex: 1; }
+.history-q { font-size: 14px; color: white; font-weight: 700; line-height: 1.4; margin-bottom: 6px; }
+.history-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.history-chip {
+  padding: 3px 8px;
+  border-radius: 8px;
+  font-size: 10px; font-weight: 700;
+}
+.status-active { background: rgba(52,199,89,0.12); color: var(--green); }
+.status-resolved { background: rgba(0,71,171,0.12); color: var(--sky); }
+
+/* ══════════════════════════════════════════════════════
+   SCREEN 10: PROFILE
+══════════════════════════════════════════════════════ */
+#screen-profile {
+  background: linear-gradient(170deg, #060e20 0%, #0a1530 100%);
+}
+.profile-header-bg {
+  background: linear-gradient(135deg, rgba(0,71,171,0.25), rgba(0,191,255,0.08));
+  padding: 50px 22px 28px;
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+.profile-top { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.profile-avatar {
+  width: 68px; height: 68px;
+  background: linear-gradient(135deg, var(--cobalt), var(--sky));
+  border-radius: 22px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px;
+  box-shadow: 0 8px 24px rgba(0,71,171,0.4);
+}
+.profile-name { font-size: 20px; font-weight: 900; color: white; }
+.profile-handle { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+.profile-badges { display: flex; gap: 6px; margin-top: 6px; }
+
+.score-row {
+  display: flex; gap: 12px;
+}
+.score-card {
+  flex: 1; padding: 14px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  text-align: center;
+}
+.score-val { font-size: 24px; font-weight: 900; color: var(--sky); }
+.score-lbl { font-size: 11px; font-weight: 700; color: var(--text-muted); margin-top: 2px; }
+
+.settings-section { padding: 16px; }
+.settings-label {
+  font-size: 11px; font-weight: 800; letter-spacing: 1.5px;
+  color: var(--text-muted); text-transform: uppercase;
+  margin-bottom: 10px; padding: 0 4px;
+}
+.setting-card {
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 18px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.setting-row {
+  display: flex; align-items: center; gap: 14px;
+  padding: 15px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-row:active { background: rgba(255,255,255,0.04); }
+.setting-icon { font-size: 20px; width: 32px; text-align: center; }
+.setting-text { flex: 1; }
+.setting-title { font-size: 15px; color: white; font-weight: 600; }
+.setting-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+.setting-arrow { color: var(--text-muted); font-size: 14px; }
+.toggle-switch {
+  width: 50px; height: 28px;
+  border-radius: 14px;
+  position: relative; cursor: pointer;
+  transition: background 0.3s;
+  flex-shrink: 0;
+}
+.toggle-switch.on { background: var(--green); }
+.toggle-switch.off { background: rgba(255,255,255,0.15); }
+.toggle-knob {
+  position: absolute;
+  top: 3px; width: 22px; height: 22px;
+  background: white; border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  transition: left 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.toggle-switch.on .toggle-knob { left: 25px; }
+.toggle-switch.off .toggle-knob { left: 3px; }
+
+/* Slider */
+.slider-section { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+.slider-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.slider-name { font-size: 14px; color: white; font-weight: 600; }
+.slider-val { font-size: 14px; color: var(--sky); font-weight: 800; }
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%; height: 4px;
+  border-radius: 2px;
+  background: rgba(255,255,255,0.1);
+  outline: none;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: white;
+  border: 2px solid var(--sky);
+  box-shadow: 0 2px 8px rgba(0,191,255,0.3);
+  cursor: pointer;
+}
+
+/* ══════════════════════════════════════════════════════
+   TOAST NOTIFICATION
+══════════════════════════════════════════════════════ */
+#toast {
+  position: absolute;
+  top: 60px; left: 50%;
+  transform: translateX(-50%) translateY(-100px);
+  z-index: 9000;
+  background: rgba(8,14,28,0.95);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 12px 18px;
+  display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  white-space: nowrap;
+  transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+#toast .toast-icon { font-size: 18px; }
+#toast .toast-text { font-size: 13px; font-weight: 700; color: white; }
+
+/* ══════════════════════════════════════════════════════
+   MODAL OVERLAY
+══════════════════════════════════════════════════════ */
+.modal-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  z-index: 800;
+  display: flex; align-items: flex-end;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.3s;
+}
+.modal-overlay.open { opacity: 1; pointer-events: all; }
+.modal-sheet {
+  width: 100%;
+  background: #0d1a35;
+  border-radius: 28px 28px 0 0;
+  border-top: 1px solid var(--glass-border);
+  padding: 20px 22px 48px;
+  transform: translateY(100%);
+  transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1);
+}
+.modal-overlay.open .modal-sheet { transform: translateY(0); }
+.modal-title { font-size: 18px; font-weight: 900; color: white; margin-bottom: 4px; }
+.modal-sub { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
+.modal-close {
+  position: absolute; top: 16px; right: 16px;
+  width: 32px; height: 32px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 16px;
+}
+
+/* Success state */
+.success-anim {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 12px; padding: 20px 0;
+}
+.success-circle {
+  width: 70px; height: 70px;
+  background: rgba(52,199,89,0.15);
+  border: 2px solid var(--green);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px;
+  animation: successPop 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes successPop {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+.success-title { font-size: 20px; font-weight: 900; color: white; }
+.success-sub { font-size: 14px; color: var(--text-secondary); text-align: center; line-height: 1.5; }
+
+/* Scroll hint fade */
+.page-content { mask-image: linear-gradient(to bottom, black 80%, transparent 100%); }
+
+/* Utility */
+.mt8 { margin-top: 8px; }
+.mt12 { margin-top: 12px; }
+.mt16 { margin-top: 16px; }
+.pad16 { padding: 0 16px; }
+.text-sky { color: var(--sky); }
+.text-red { color: var(--red); }
+.text-green { color: var(--green); }
+.text-orange { color: var(--orange); }
+.fw800 { font-weight: 800; }
+</style>
+</head>
+<body>
+
+<div id="phone">
+
+  <!-- ████████████████████████████
+       SCREEN: SPLASH
+  ████████████████████████████ -->
+  <div class="screen active" id="screen-splash">
+    <div class="splash-logo" style="margin-top: 60px;">
+      <!-- Radar Logo -->
+      <svg class="splash-radar" width="140" height="140" viewBox="0 0 140 140" fill="none">
+        <defs>
+          <radialGradient id="sg1" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#0047AB" stop-opacity="0.3"/>
+            <stop offset="100%" stop-color="#0047AB" stop-opacity="0"/>
+          </radialGradient>
+          <linearGradient id="sg2" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#00BFFF"/>
+            <stop offset="100%" stop-color="#0047AB"/>
+          </linearGradient>
+          <radialGradient id="sg3" cx="0%" cy="100%" r="100%">
+            <stop offset="0%" stop-color="#00BFFF" stop-opacity="0.5"/>
+            <stop offset="100%" stop-color="#00BFFF" stop-opacity="0"/>
+          </radialGradient>
+          <clipPath id="sc1"><circle cx="70" cy="70" r="58"/></clipPath>
+        </defs>
+        <circle cx="70" cy="70" r="68" fill="url(#sg1)"/>
+        <circle cx="70" cy="70" r="58" stroke="rgba(0,191,255,0.15)" stroke-width="1.2" fill="rgba(0,71,171,0.05)"/>
+        <circle cx="70" cy="70" r="40" stroke="rgba(0,191,255,0.2)" stroke-width="1" fill="none"/>
+        <circle cx="70" cy="70" r="22" stroke="rgba(0,191,255,0.3)" stroke-width="1" fill="none"/>
+        <line x1="12" y1="70" x2="128" y2="70" stroke="rgba(0,191,255,0.1)" stroke-width="0.8"/>
+        <line x1="70" y1="12" x2="70" y2="128" stroke="rgba(0,191,255,0.1)" stroke-width="0.8"/>
+        <!-- Sweep -->
+        <g class="sweep-anim" clip-path="url(#sc1)">
+          <path d="M70 70 L70 12 A58 58 0 0 1 128 70 Z" fill="url(#sg3)" opacity="0.7"/>
+          <line x1="70" y1="70" x2="70" y2="12" stroke="#00BFFF" stroke-width="1.8" opacity="0.9"/>
+        </g>
+        <!-- Person nodes (5) -->
+        <!-- Top -->
+        <g filter="url(#psf)">
+          <circle cx="70" cy="18" r="9" fill="#0d2a5e" stroke="#00BFFF" stroke-width="1.5"/>
+          <circle cx="70" cy="15" r="3" fill="url(#sg2)"/>
+          <path d="M64 24 C64 20 66.7 18.5 70 18.5 C73.3 18.5 76 20 76 24" fill="url(#sg2)" opacity="0.9"/>
+        </g>
+        <!-- Top-Right -->
+        <g>
+          <circle cx="110" cy="42" r="9" fill="#0d2a5e" stroke="#00BFFF" stroke-width="1.5"/>
+          <circle cx="110" cy="39" r="3" fill="url(#sg2)"/>
+          <path d="M104 48 C104 44 106.7 42.5 110 42.5 C113.3 42.5 116 44 116 48" fill="url(#sg2)" opacity="0.9"/>
+        </g>
+        <!-- Bot-Right -->
+        <g>
+          <circle cx="97" cy="113" r="9" fill="#0d2a5e" stroke="#00BFFF" stroke-width="1.5"/>
+          <circle cx="97" cy="110" r="3" fill="url(#sg2)"/>
+          <path d="M91 119 C91 115 93.7 113.5 97 113.5 C100.3 113.5 103 115 103 119" fill="url(#sg2)" opacity="0.9"/>
+        </g>
+        <!-- Bot-Left -->
+        <g>
+          <circle cx="43" cy="113" r="9" fill="#0d2a5e" stroke="#00BFFF" stroke-width="1.5"/>
+          <circle cx="43" cy="110" r="3" fill="url(#sg2)"/>
+          <path d="M37 119 C37 115 39.7 113.5 43 113.5 C46.3 113.5 49 115 49 119" fill="url(#sg2)" opacity="0.9"/>
+        </g>
+        <!-- Top-Left -->
+        <g>
+          <circle cx="30" cy="42" r="9" fill="#0d2a5e" stroke="#00BFFF" stroke-width="1.5"/>
+          <circle cx="30" cy="39" r="3" fill="url(#sg2)"/>
+          <path d="M24 48 C24 44 26.7 42.5 30 42.5 C33.3 42.5 36 44 36 48" fill="url(#sg2)" opacity="0.9"/>
+        </g>
+        <!-- Connection lines -->
+        <line x1="70" y1="70" x2="70" y2="27" stroke="#00BFFF" stroke-width="1" opacity="0.25" stroke-dasharray="3 3"/>
+        <line x1="70" y1="70" x2="101" y2="51" stroke="#00BFFF" stroke-width="1" opacity="0.25" stroke-dasharray="3 3"/>
+        <line x1="70" y1="70" x2="88" y2="104" stroke="#00BFFF" stroke-width="1" opacity="0.25" stroke-dasharray="3 3"/>
+        <line x1="70" y1="70" x2="52" y2="104" stroke="#00BFFF" stroke-width="1" opacity="0.25" stroke-dasharray="3 3"/>
+        <line x1="70" y1="70" x2="39" y2="51" stroke="#00BFFF" stroke-width="1" opacity="0.25" stroke-dasharray="3 3"/>
+        <!-- Center you -->
+        <circle cx="70" cy="70" r="11" fill="#0d2a5e" stroke="rgba(0,191,255,0.6)" stroke-width="2"/>
+        <circle cx="70" cy="67" r="3.5" fill="#00BFFF"/>
+        <path d="M64 76 C64 72 66.8 70.5 70 70.5 C73.2 70.5 76 72 76 76" fill="#00BFFF" opacity="0.9"/>
+        <defs><filter id="psf"><feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#00BFFF" flood-opacity="0.6"/></filter></defs>
+      </svg>
+
+      <div class="splash-name"><span>Geo</span>Linked</div>
+      <div class="splash-tag">Live Local Intelligence</div>
+      <div class="splash-progress"><div class="splash-bar"></div></div>
+    </div>
+  </div>
+
+  <!-- ████████████████████████████
+       SCREEN: ONBOARDING
+  ████████████████████████████ -->
+  <div class="screen" id="screen-onboard">
+    <div class="status-bar">
+      <span class="time">9:41</span>
+      <div class="icons"><span>●●●</span><span>🔋</span></div>
+    </div>
+
+    <!-- Slide 1 -->
+    <div class="ob-slide active" id="ob-1" style="flex:1;display:flex;flex-direction:column;">
+      <div class="ob-visual">
+        <div class="map-3d">
+          <div class="map-grid-lines"></div>
+          <div class="map-road" style="top:44%;left:0;right:0;height:12px;transform:translateY(-50%)"></div>
+          <div class="map-road" style="top:68%;left:0;right:0;height:7px;transform:translateY(-50%)"></div>
+          <div class="map-road" style="top:0;bottom:0;left:32%;width:10px;transform:translateX(-50%)"></div>
+          <div class="map-road" style="top:0;bottom:0;left:68%;width:7px;transform:translateX(-50%)"></div>
+
+          <div class="pulse-ring" style="width:50px;height:50px;background:rgba(255,149,0,0.2);border-color:#FF9500;top:40%;left:25%"></div>
+          <div class="map-event" style="top:40%;left:25%;background:linear-gradient(135deg,#FF9500,#FFB833);box-shadow:0 6px 20px rgba(255,149,0,0.4)">🚗</div>
+
+          <div class="pulse-ring" style="width:50px;height:50px;background:rgba(255,59,48,0.2);top:20%;left:62%;animation-delay:0.7s"></div>
+          <div class="map-event" style="top:20%;left:62%;background:linear-gradient(135deg,#FF3B30,#FF6060);box-shadow:0 6px 20px rgba(255,59,48,0.4)">🚧</div>
+
+          <div class="map-event" style="top:62%;left:68%;background:linear-gradient(135deg,#0047AB,#0070f3);box-shadow:0 6px 20px rgba(0,71,171,0.4)">🛍️</div>
+          <div class="map-event" style="top:70%;left:28%;background:linear-gradient(135deg,#34C759,#28a745);box-shadow:0 6px 20px rgba(52,199,89,0.4)">⚡</div>
+
+          <div style="position:absolute;top:10%;left:6%;background:rgba(8,14,28,0.85);border:1px solid rgba(255,59,48,0.3);border-radius:10px;padding:5px 9px;display:flex;align-items:center;gap:5px;">
+            <div style="width:6px;height:6px;border-radius:50%;background:#FF3B30;animation:liveBlink 1.2s infinite"></div>
+            <span style="font-size:10px;font-weight:700;color:white">Road Block</span>
+          </div>
+          <div style="position:absolute;bottom:12%;right:6%;background:rgba(8,14,28,0.85);border:1px solid rgba(255,149,0,0.3);border-radius:10px;padding:5px 9px;display:flex;align-items:center;gap:5px;">
+            <div style="width:6px;height:6px;border-radius:50%;background:#FF9500;animation:liveBlink 1.2s infinite;animation-delay:0.4s"></div>
+            <span style="font-size:10px;font-weight:700;color:white">Heavy Traffic</span>
+          </div>
+        </div>
+      </div>
+      <div class="ob-bottom">
+        <div class="ob-step">01 of 03</div>
+        <div class="ob-title">Know what's happening around you, <em>instantly.</em></div>
+        <div class="ob-desc">Live traffic, road blocks, market conditions & safety updates — shared by real people nearby.</div>
+        <div class="ob-nav">
+          <span class="ob-skip" onclick="goToAuth()">Skip</span>
+          <div class="ob-dots"><div class="ob-dot on"></div><div class="ob-dot"></div><div class="ob-dot"></div></div>
+          <button class="ob-next" onclick="obNext(2)">→</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 2 -->
+    <div class="ob-slide" id="ob-2" style="flex:1;display:none;flex-direction:column;">
+      <div class="ob-visual">
+        <div style="position:relative;width:280px;height:250px;">
+          <!-- Concentric rings -->
+          <div style="position:absolute;border-radius:50%;left:50%;top:46%;transform:translate(-50%,-50%);width:260px;height:260px;border:1.5px dashed rgba(0,71,171,0.2)"></div>
+          <div style="position:absolute;border-radius:50%;left:50%;top:46%;transform:translate(-50%,-50%);width:180px;height:180px;border:1.5px dashed rgba(0,71,171,0.3)"></div>
+          <div style="position:absolute;border-radius:50%;left:50%;top:46%;transform:translate(-50%,-50%);width:100px;height:100px;border:1.5px solid rgba(0,191,255,0.4)"></div>
+          <!-- Center you -->
+          <div style="position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:16px;height:16px;background:#00BFFF;border-radius:50%;border:2px solid white;box-shadow:0 0 0 8px rgba(0,191,255,0.15),0 4px 12px rgba(0,191,255,0.4)"></div>
+          <!-- Pin drop -->
+          <div style="position:absolute;left:62%;top:30%;transform:translate(-50%,-100%);font-size:28px;animation:pinDrop 1s cubic-bezier(0.34,1.56,0.64,1) forwards">📍</div>
+          <!-- Reply bubbles -->
+          <div style="position:absolute;right:0;top:15%;background:rgba(13,26,53,0.95);border:1px solid rgba(0,191,255,0.2);border-radius:14px 14px 14px 4px;padding:10px 12px;max-width:140px;animation:floatUp 3s ease-in-out infinite">
+            <div style="font-size:9px;font-weight:800;color:#00BFFF;margin-bottom:3px">Hamid · 90m</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.85);font-weight:600">Market is open! 🛒</div>
+          </div>
+          <div style="position:absolute;left:0;top:50%;background:rgba(13,26,53,0.95);border:1px solid rgba(0,191,255,0.2);border-radius:14px 14px 4px 14px;padding:10px 12px;max-width:130px;animation:floatUp 3.5s ease-in-out infinite;animation-delay:0.8s">
+            <div style="font-size:9px;font-weight:800;color:#00BFFF;margin-bottom:3px">Sara · 200m</div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.85);font-weight:600">Road clear now 👍</div>
+          </div>
+        </div>
+      </div>
+      <div class="ob-bottom">
+        <div class="ob-step">02 of 03</div>
+        <div class="ob-title">Ask <em>anyone</em> at a specific location.</div>
+        <div class="ob-desc">Drop a pin, type your question. People within 300m respond in seconds — crowd-sourced local intel.</div>
+        <div class="ob-nav">
+          <span class="ob-skip" onclick="goToAuth()">Skip</span>
+          <div class="ob-dots"><div class="ob-dot"></div><div class="ob-dot on"></div><div class="ob-dot"></div></div>
+          <button class="ob-next" onclick="obNext(3)">→</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 3 -->
+    <div class="ob-slide" id="ob-3" style="flex:1;display:none;flex-direction:column;">
+      <div class="ob-visual">
+        <div style="position:relative;width:270px;height:250px;display:flex;align-items:center;justify-content:center;">
+          <!-- Radar rings -->
+          <div style="position:absolute;border-radius:50%;width:250px;height:250px;border:1px solid rgba(0,71,171,0.15);background:rgba(0,71,171,0.03)"></div>
+          <div style="position:absolute;border-radius:50%;width:175px;height:175px;border:1.5px solid rgba(0,71,171,0.22);background:rgba(0,71,171,0.05)"></div>
+          <div style="position:absolute;border-radius:50%;width:100px;height:100px;border:1.5px solid rgba(0,71,171,0.35);background:rgba(0,71,171,0.07)"></div>
+          <!-- Center -->
+          <div style="position:absolute;width:20px;height:20px;background:#00BFFF;border-radius:50%;border:2px solid white;box-shadow:0 0 0 8px rgba(0,191,255,0.2),0 0 24px rgba(0,191,255,0.5);z-index:5"></div>
+          <!-- Blips -->
+          <div style="position:absolute;top:18%;left:62%;width:10px;height:10px;border-radius:50%;background:#FF3B30;box-shadow:0 0 12px rgba(255,59,48,0.6)"></div>
+          <div style="position:absolute;bottom:22%;left:22%;width:10px;height:10px;border-radius:50%;background:#FF9500;box-shadow:0 0 12px rgba(255,149,0,0.6)"></div>
+          <div style="position:absolute;bottom:18%;right:18%;width:10px;height:10px;border-radius:50%;background:#34C759;box-shadow:0 0 12px rgba(52,199,89,0.6)"></div>
+          <!-- Labels -->
+          <div style="position:absolute;top:14%;left:50%;transform:translateX(-50%);font-size:9px;font-weight:800;color:rgba(0,191,255,0.5);letter-spacing:1px">10 KM</div>
+          <div style="position:absolute;top:30%;left:50%;transform:translateX(-50%);font-size:9px;font-weight:800;color:rgba(0,191,255,0.4);letter-spacing:1px">3 KM</div>
+          <div style="position:absolute;top:44%;left:50%;transform:translateX(-50%);font-size:9px;font-weight:800;color:rgba(255,255,255,0.3);letter-spacing:1px">300M</div>
+          <!-- Notification cards -->
+          <div style="position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);white-space:nowrap;background:rgba(255,59,48,0.1);border:1px solid rgba(255,59,48,0.3);border-radius:10px;padding:5px 12px;font-size:11px;font-weight:700;color:#FF3B30">🚧 Road Block · 1.2km away</div>
+        </div>
+      </div>
+      <div class="ob-bottom">
+        <div class="ob-step">03 of 03</div>
+        <div class="ob-title">Get <em>notified</em> about what matters in your radius.</div>
+        <div class="ob-desc">Set alert zones — 300m for local asks, 10km for city-wide broadcasts. Only hear what's relevant.</div>
+        <div class="ob-nav">
+          <div style="width:40px"></div>
+          <div class="ob-dots"><div class="ob-dot"></div><div class="ob-dot"></div><div class="ob-dot on"></div></div>
+          <button class="ob-getstarted" onclick="goToAuth()">Get Started 🎉</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ████████████████████████████
+       SCREEN: AUTH
+  ████████████████████████████ -->
+  <div class="screen" id="screen-auth">
+    <div class="auth-hero">
+      <div class="auth-title">Welcome to<br><span>GeoLinked</span> 👋</div>
+      <div class="auth-sub">Join 50,000+ locals sharing real-time intel</div>
+    </div>
+    <div class="auth-body">
+      <button class="social-btn" onclick="doLogin()">
+        <svg class="social-icon" viewBox="0 0 24 24" fill="none"><path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.7 9.05 7.42c1.38.07 2.34.74 3.15.8 1.2-.24 2.35-.93 3.64-.84 1.55.12 2.72.72 3.5 1.9-3.23 1.95-2.77 6.4.71 7.93-.71 1.45-1.63 2.89-3 3.07zm-3.15-17.52c.05 2.52-1.83 4.52-4.13 4.32-.3-2.2 2.03-4.52 4.13-4.32z" fill="white"/></svg>
+        Continue with Apple
+      </button>
+      <button class="social-btn" onclick="doLogin()">
+        <svg class="social-icon" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Continue with Google
+      </button>
+
+      <div class="divider">or use phone number</div>
+
+      <div class="input-group">
+        <div class="input-label">Phone Number</div>
+        <div class="phone-row">
+          <div class="flag-btn">🇵🇰 +92</div>
+          <input class="input-field" type="tel" placeholder="3XX XXXXXXX" style="flex:1">
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="doLogin()">Send OTP Code →</button>
+
+      <div class="security-badge">
+        <span class="badge-icon">🔒</span>
+        <div>
+          <div class="badge-title">Safe & Encrypted</div>
+          <div class="badge-sub">Your location is never stored without consent</div>
+        </div>
+      </div>
+
+      <div style="text-align:center;font-size:12px;color:var(--text-muted);font-weight:600;line-height:1.6">
+        By continuing you agree to our<br>
+        <span style="color:var(--sky)">Terms of Service</span> & <span style="color:var(--sky)">Privacy Policy</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ████████████████████████████
+       SCREEN: HOME MAP
+  ████████████████████████████ -->
+  <div class="screen" id="screen-home">
+    <!-- Map canvas -->
+    <div class="map-canvas">
+      <div class="grid"></div>
+      <!-- Roads -->
+      <div class="map-road-h" style="top:35%;left:0;right:0;height:14px;transform:translateY(-50%)"></div>
+      <div class="map-road-h" style="top:58%;left:0;right:0;height:9px;transform:translateY(-50%)"></div>
+      <div class="map-road-h" style="top:74%;left:0;right:0;height:6px;transform:translateY(-50%)"></div>
+      <div class="map-road-v" style="top:0;bottom:0;left:30%;width:11px;transform:translateX(-50%)"></div>
+      <div class="map-road-v" style="top:0;bottom:0;left:64%;width:9px;transform:translateX(-50%)"></div>
+      <div class="map-road-v" style="top:0;bottom:0;left:82%;width:6px;transform:translateX(-50%)"></div>
+
+      <!-- Markers -->
+      <div class="map-marker" style="top:33%;left:24%;" onclick="openChat('traffic')">
+        <div class="marker-pin" style="background:linear-gradient(135deg,#FF9500,#FFB833);"><div class="marker-pulse" style="border-color:#FF9500;border-radius:18px"></div>🚗</div>
+        <div class="marker-tail" style="border-top-color:#FF9500"></div>
+      </div>
+      <div class="map-marker" style="top:18%;left:58%;" onclick="openChat('safety')">
+        <div class="marker-pin" style="background:linear-gradient(135deg,#FF3B30,#FF6060);"><div class="marker-pulse" style="border-color:#FF3B30;border-radius:18px;animation-delay:0.5s"></div>🚧</div>
+        <div class="marker-tail" style="border-top-color:#FF3B30"></div>
+      </div>
+      <div class="map-marker" style="top:50%;left:72%;" onclick="openChat('market')">
+        <div class="marker-pin" style="background:linear-gradient(135deg,#0047AB,#0070f3);">🛍️</div>
+        <div class="marker-tail" style="border-top-color:#0047AB"></div>
+      </div>
+      <div class="map-marker" style="top:64%;left:36%;" onclick="openChat('power')">
+        <div class="marker-pin" style="background:linear-gradient(135deg,#34C759,#28a745);">⚡</div>
+        <div class="marker-tail" style="border-top-color:#34C759"></div>
+      </div>
+      <div class="map-marker" style="top:26%;left:42%;" onclick="openChat('ask')">
+        <div class="marker-pin" style="background:linear-gradient(135deg,#AF52DE,#9030c0);">❓</div>
+        <div class="marker-tail" style="border-top-color:#AF52DE"></div>
+      </div>
+
+      <!-- You-pin -->
+      <div class="you-pin" style="left:50%;top:46%">
+        <div class="you-pulse"></div>
+        <div class="you-pulse" style="animation-delay:1s"></div>
+        <div class="you-dot"></div>
+      </div>
+
+      <!-- Radius overlay -->
+      <div style="position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:180px;height:180px;border-radius:50%;background:rgba(0,71,171,0.05);border:1.5px dashed rgba(0,71,171,0.2);pointer-events:none"></div>
+    </div>
+
+    <!-- Alert drop banner -->
+    <div class="alert-drop" id="alert-drop"
+      style="background:rgba(255,59,48,0.9);backdrop-filter:blur(16px);"
+      onclick="dismissAlert()">
+      <span style="font-size:16px">🚧</span>
+      <span class="alert-drop-text" style="color:white">Road Block – Shahrah-e-Faisal</span>
+      <span style="font-size:12px;color:rgba(255,255,255,0.7)">✕</span>
+    </div>
+
+    <!-- Top search -->
+    <div class="map-topbar">
+      <div class="search-pill">
+        <svg width="14" height="14" fill="none" viewBox="0 0 16 16"><circle cx="6.5" cy="6.5" r="5" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/><path d="M10 10l3.5 3.5" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round"/></svg>
+        <input type="text" placeholder="Search location or topic…" readonly onclick="showToast('🔍 Search coming soon!')">
+      </div>
+      <div class="filter-btn" onclick="cycleFilter()">⚙️</div>
+    </div>
+
+    <!-- Filter chips -->
+    <div class="filter-row" id="filter-row">
+      <div class="filter-chip active" onclick="selectFilter(this,'all')">🗂️ All</div>
+      <div class="filter-chip" onclick="selectFilter(this,'traffic')">🚦 Traffic</div>
+      <div class="filter-chip" onclick="selectFilter(this,'safety')">🛡️ Safety</div>
+      <div class="filter-chip" onclick="selectFilter(this,'market')">🛒 Markets</div>
+      <div class="filter-chip" onclick="selectFilter(this,'util')">💡 Utilities</div>
+    </div>
+
+    <!-- FAB -->
+    <div class="fab-container" id="fab-container">
+      <div class="fab-options" id="fab-options">
+        <div class="fab-option" onclick="goToScreen('screen-broadcast'); closeFab()">
+          <div class="fo-icon">📢</div>
+          <div class="fo-label">Broadcast</div>
+          <div class="fo-sub">10km radius</div>
+        </div>
+        <div class="fab-option" onclick="goToScreen('screen-ask'); closeFab()">
+          <div class="fo-icon">❓</div>
+          <div class="fo-label">Ask Nearby</div>
+          <div class="fo-sub">300m radius</div>
+        </div>
+      </div>
+      <button class="fab-main" id="fab-main" onclick="toggleFab()">＋</button>
+    </div>
+
+    <!-- Nav -->
+    <div class="bottom-nav">
+      <div class="nav-item active" onclick="navTo('home',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:#00BFFF"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Map</span>
+      </div>
+      <div class="nav-item" onclick="navTo('feed',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:rgba(255,255,255,0.4)"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Feed</span>
+        <div class="nav-badge"></div>
+      </div>
+      <div class="nav-item" onclick="navTo('history',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:rgba(255,255,255,0.4)"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>My Asks</span>
+      </div>
+      <div class="nav-item" onclick="navTo('profile',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:rgba(255,255,255,0.4)"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Profile</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ████████████████████████████
+       SCREEN: ASK QUESTION
+  ████████████████████████████ -->
+  <div class="screen" id="screen-ask">
+    <div class="ask-map">
+      <div class="grid"></div>
+      <div class="map-road-h" style="top:42%;left:0;right:0;height:10px;transform:translateY(-50%);background:rgba(255,255,255,0.15)"></div>
+      <div class="map-road-v" style="top:0;bottom:0;left:50%;width:8px;transform:translateX(-50%);background:rgba(255,255,255,0.15)"></div>
+    </div>
+
+    <div class="radius-circle rc-outer"></div>
+    <div class="radius-circle rc-inner"></div>
+    <div style="position:absolute;left:50%;top:26%;transform:translateX(-50%);z-index:30" class="range-label-map">📍 300m Radius</div>
+
+    <!-- You pin -->
+    <div class="you-pin" style="left:50%;top:42%;z-index:20">
+      <div class="you-pulse"></div>
+      <div class="you-dot"></div>
+    </div>
+
+    <!-- People within radius -->
+    <div style="position:absolute;top:32%;left:28%;transform:translate(-50%,-50%);z-index:20;font-size:22px;filter:drop-shadow(0 4px 8px rgba(0,191,255,0.4))">👤</div>
+    <div style="position:absolute;top:48%;left:72%;transform:translate(-50%,-50%);z-index:20;font-size:22px;filter:drop-shadow(0 4px 8px rgba(0,191,255,0.4))">👤</div>
+    <div style="position:absolute;top:38%;left:62%;transform:translate(-50%,-50%);z-index:20;font-size:22px;filter:drop-shadow(0 4px 8px rgba(0,191,255,0.4))">👤</div>
+
+    <div class="ask-topbar">
+      <div class="back-btn" onclick="goToScreen('screen-home')">←</div>
+      <div class="ask-topbar-title">Ask Nearby People</div>
+    </div>
+
+    <div class="ask-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Ask the Crowd 🙋</div>
+      <div class="sheet-sub">People within 300m will see & answer your question.</div>
+      <div class="range-chip">📍 300m · Anonymous · Real-time</div>
+      <textarea class="ask-textarea" id="ask-text" placeholder="E.g. Is the market on Tariq Road open right now?"></textarea>
+      <button class="btn-primary" onclick="submitAsk()">Send Question →</button>
+    </div>
+  </div>
+
+  <!-- ████████████████████████████
+       SCREEN: BROADCAST
+  ████████████████████████████ -->
+  <div class="screen" id="screen-broadcast">
+    <div class="broadcast-header">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+        <div class="back-btn" onclick="goToScreen('screen-home')" style="background:var(--glass);border:1px solid var(--glass-border)">←</div>
+        <div>
+          <div class="broadcast-title">Broadcast to City 📢</div>
+          <div class="broadcast-sub">Alert people within 10km radius</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="broadcast-area">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">Alert Type</div>
+          <div class="broadcast-type-row" id="btype-row">
+            <div class="btype-btn selected" onclick="selectBType(this,'traffic')">
+              <div class="bt-icon">🚗</div>
+              <div class="bt-label">Traffic</div>
+              <div class="bt-sub">Congestion</div>
+            </div>
+            <div class="btype-btn" onclick="selectBType(this,'safety')">
+              <div class="bt-icon">🚧</div>
+              <div class="bt-label">Safety</div>
+              <div class="bt-sub">Hazard</div>
+            </div>
+            <div class="btype-btn" onclick="selectBType(this,'market')">
+              <div class="bt-icon">🛒</div>
+              <div class="bt-label">Market</div>
+              <div class="bt-sub">Status</div>
+            </div>
+            <div class="btype-btn" onclick="selectBType(this,'util')">
+              <div class="bt-icon">⚡</div>
+              <div class="bt-label">Utility</div>
+              <div class="bt-sub">Power</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <div class="input-label">Your message</div>
+          <textarea class="ask-textarea" id="broadcast-text" placeholder="Describe the situation clearly so people can take action…" style="height:110px"></textarea>
+        </div>
+
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text-secondary);margin-bottom:10px;text-transform:uppercase;letter-spacing:0.5px">Broadcast Radius</div>
+          <div style="background:var(--glass);border:1px solid var(--glass-border);border-radius:16px;padding:16px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+              <span style="font-size:14px;color:white;font-weight:600">Radius</span>
+              <span style="font-size:14px;color:var(--sky);font-weight:800" id="radius-label">10 km</span>
+            </div>
+            <input type="range" min="1" max="50" value="10" oninput="updateRadius(this.value)">
+            <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--text-muted);font-weight:600">
+              <span>1 km</span><span>50 km</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:rgba(255,149,0,0.08);border:1px solid rgba(255,149,0,0.2);border-radius:16px;padding:14px;display:flex;gap:12px;align-items:flex-start;">
+          <span style="font-size:20px">⚠️</span>
+          <div>
+            <div style="font-size:13px;font-weight:800;color:#FF9500;">Broadcast Responsibly</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:3px;line-height:1.5">False alerts reduce community trust. Only broadcast verified information.</div>
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="submitBroadcast()" style="background:linear-gradient(135deg,#FF9500,#FF6B00);box-shadow:0 8px 24px rgba(255,149,0,0.4)">
+          📢 Broadcast Now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ████████████████████████████
+       SCREEN: FEED
+  ████████████████████████████ -->
+  <div class="screen" id="screen-feed">
+    <div class="feed-header">
+      <div class="feed-header-top">
+        <div class="feed-title">Nearby Alerts 📡</div>
+        <div class="live-badge"><div class="live-dot-anim"></div>LIVE</div>
+      </div>
+      <div style="font-size:13px;color:var(--text-secondary);margin-top:3px">10km radius · Updating now</div>
+      <div class="feed-tabs">
+        <div class="feed-tab active" onclick="feedTab(this,'all')">All</div>
+        <div class="feed-tab" onclick="feedTab(this,'traffic')">🚗 Traffic</div>
+        <div class="feed-tab" onclick="feedTab(this,'safety')">🛡️ Safety</div>
+        <div class="feed-tab" onclick="feedTab(this,'ask')">❓ Asks</div>
+      </div>
+    </div>
+
+    <div class="page-content" style="padding-top:14px">
+      <!-- Alert cards -->
+      <div class="alert-card" onclick="openChat('safety')" style="">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:#FF3B30;border-radius:3px 0 0 3px"></div>
+        <div class="alert-icon-box" style="background:rgba(255,59,48,0.12)">🚧</div>
+        <div class="alert-content">
+          <div class="alert-top"><span class="alert-type" style="color:#FF3B30">ROAD BLOCK</span><span class="alert-time">2 min ago</span></div>
+          <div class="alert-msg">Main Shahrah-e-Faisal blocked near Nursery. Police check post. Use alternate via Old Sabzi Mandi.</div>
+          <div class="alert-chips">
+            <div class="alert-chip">👁️ 312 seen</div>
+            <div class="alert-chip">📍 1.2 km</div>
+            <div class="alert-chip">✅ 28 verified</div>
+            <div class="alert-chip">💬 14 replies</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert-card" onclick="openChat('traffic')">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:#FF9500;border-radius:3px 0 0 3px"></div>
+        <div class="alert-icon-box" style="background:rgba(255,149,0,0.12)">🚗</div>
+        <div class="alert-content">
+          <div class="alert-top"><span class="alert-type" style="color:#FF9500">TRAFFIC JAM</span><span class="alert-time">11 min ago</span></div>
+          <div class="alert-msg">Heavy congestion on Korangi Road near the bridge. Estimate +25 min delay. Trucks causing bottleneck.</div>
+          <div class="alert-chips">
+            <div class="alert-chip">👁️ 450 seen</div>
+            <div class="alert-chip">📍 3.4 km</div>
+            <div class="alert-chip">✅ 51 verified</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert-card" onclick="openChat('ask')">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:#AF52DE;border-radius:3px 0 0 3px"></div>
+        <div class="alert-icon-box" style="background:rgba(175,82,222,0.12)">❓</div>
+        <div class="alert-content">
+          <div class="alert-top"><span class="alert-type" style="color:#AF52DE">QUESTION</span><span class="alert-time">15 min ago</span></div>
+          <div class="alert-msg">Is Sunday Bazaar at Clifton open today? How's the crowd?</div>
+          <div class="alert-chips">
+            <div class="alert-chip">📍 0.3 km</div>
+            <div class="alert-chip">💬 6 answers</div>
+            <div class="alert-chip">⏰ Active</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert-card" onclick="openChat('market')">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:#0047AB;border-radius:3px 0 0 3px"></div>
+        <div class="alert-icon-box" style="background:rgba(0,71,171,0.12)">🛒</div>
+        <div class="alert-content">
+          <div class="alert-top"><span class="alert-type" style="color:#00BFFF">MARKET STATUS</span><span class="alert-time">22 min ago</span></div>
+          <div class="alert-msg">Empress Market open, vegetable prices up 20% today. Still busy. Fish section closed.</div>
+          <div class="alert-chips">
+            <div class="alert-chip">👁️ 189 seen</div>
+            <div class="alert-chip">📍 5.1 km</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert-card" onclick="openChat('power')">
+        <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:#34C759;border-radius:3px 0 0 3px"></div>
+        <div class="alert-icon-box" style="background:rgba(52,199,89,0.12)">⚡</div>
+        <div class="alert-content">
+          <div class="alert-top"><span class="alert-type" style="color:#34C759">UTILITIES</span><span class="alert-time">38 min ago</span></div>
+          <div class="alert-msg">Power restored in DHA Phase 4! KESC crew fixed the fault. Load shedding ended 2hrs early today.</div>
+          <div class="alert-chips">
+            <div class="alert-chip">👁️ 93 seen</div>
+            <div class="alert-chip">📍 7.8 km</div>
+            <div class="alert-chip">✅ 22 verified</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="text-align:center;padding:16px 0 0;font-size:13px;color:var(--text-muted);font-weight:600">
+        Showing 5 of 23 alerts
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="navTo('home',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:rgba(255,255,255,0.4)"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Map</span>
+      </div>
+      <div class="nav-item active" onclick="navTo('feed',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:#00BFFF"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Feed</span>
+      </div>
+      <div class="nav-item" onclick="navTo('history',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:rgba(255,255,255,0.4)"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>My Asks</span>
+      </div>
+      <div class="nav-item" onclick="navTo('profile',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:rgba(255,255,255,0.4)"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Profile</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ████████████████████████████
+       SCREEN: CHAT
+  ████████████████████████████ -->
+  <div class="screen" id="screen-chat">
+    <div class="chat-header">
+      <div class="chat-back" onclick="chatBack()">← Back</div>
+      <div class="chat-loc-name" id="chat-loc-name">📍 Nursery, Shahrah-e-Faisal</div>
+      <div class="chat-loc-sub" id="chat-loc-sub">1.2 km away · 300m zone · Active</div>
+      <div class="chat-status-row">
+        <div class="chip" style="background:rgba(255,59,48,0.12);color:#FF3B30">🚧 Road Block</div>
+        <div class="chip" style="background:rgba(52,199,89,0.1);color:#34C759;font-size:10px">● Live</div>
+      </div>
+    </div>
+
+    <div class="question-bubble">
+      <div class="qb-label">YOUR QUESTION / BROADCAST</div>
+      <div class="qb-text" id="chat-question">Is the road open near Nursery chowk? Police activity reported.</div>
+    </div>
+
+    <div class="messages-list" id="messages-list">
+      <div class="msg">
+        <div class="msg-bubble">Yes, there's a blockade right next to the petrol pump. Police set up a check post about 30 min ago. You can divert from Old Sabzi Mandi road — that's fully clear.</div>
+        <div class="msg-meta">
+          <span class="msg-user">Ali R.</span><span style="font-size:11px;color:#00BFFF;font-weight:700">250m away</span><span class="msg-time">2 min ago</span>
+        </div>
+        <div class="verify-row">
+          <button class="verify-btn verify-yes" onclick="vote(this,'yes')">✓ Correct (12)</button>
+          <button class="verify-btn verify-no" onclick="vote(this,'no')">✗ Wrong (2)</button>
+        </div>
+      </div>
+
+      <div class="msg">
+        <div class="msg-bubble">Can confirm — was there literally 5 mins ago. Old Sabzi Mandi alternate is quick, adds maybe 4 min max. Better than waiting.</div>
+        <div class="msg-meta">
+          <span class="msg-user">Sara M.</span><span style="font-size:11px;color:#00BFFF;font-weight:700">180m away</span><span class="msg-time">1 min ago</span>
+        </div>
+        <div class="verify-row">
+          <button class="verify-btn verify-yes" onclick="vote(this,'yes')">✓ Correct (8)</button>
+          <button class="verify-btn verify-no" onclick="vote(this,'no')">✗ Wrong (0)</button>
+        </div>
+      </div>
+
+      <div class="msg">
+        <div class="msg-bubble mine">Thank you both! Taking the alternate route now 🙏</div>
+        <div class="msg-meta mine">
+          <span class="msg-time">Just now</span><span class="msg-user">You</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="resolve-banner" onclick="resolveChat()">
+      <span style="font-size:22px">✅</span>
+      <div>
+        <div style="font-size:14px;font-weight:800;color:#34C759">Mark as Resolved</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:1px">2 people helped answer · Give them credit!</div>
+      </div>
+      <span style="color:var(--text-muted);margin-left:auto">›</span>
+    </div>
+
+    <div class="chat-input-bar">
+      <input class="chat-input" type="text" placeholder="Reply to thread…" id="chat-input-field">
+      <button class="chat-send" onclick="sendChatMsg()">↑</button>
+    </div>
+  </div>
+
+  <!-- ████████████████████████████
+       SCREEN: HISTORY
+  ████████████████████████████ -->
+  <div class="screen" id="screen-history">
+    <div class="history-header">
+      <div class="history-title">My Asks 💬</div>
+      <div class="seg-control">
+        <div class="seg-btn active" onclick="segTab(this,'active')">Active (3)</div>
+        <div class="seg-btn" onclick="segTab(this,'resolved')">Resolved (12)</div>
+        <div class="seg-btn" onclick="segTab(this,'broadcasts')">Broadcasts (7)</div>
+      </div>
+    </div>
+
+    <div class="page-content" style="padding-top:14px">
+      <div class="history-card" onclick="openChat('ask')">
+        <div class="history-map-thumb">❓</div>
+        <div class="history-body">
+          <div class="history-q">Is the bazaar on Tariq Road open right now?</div>
+          <div class="history-meta">
+            <div class="history-chip status-active">● Active</div>
+            <div class="alert-chip">💬 6 replies</div>
+            <div class="alert-chip">📍 0.3 km</div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:5px;font-weight:600">Asked 15 min ago</div>
+        </div>
+      </div>
+
+      <div class="history-card" onclick="openChat('safety')">
+        <div class="history-map-thumb">🚧</div>
+        <div class="history-body">
+          <div class="history-q">Road open near Nursery chowk? Police activity?</div>
+          <div class="history-meta">
+            <div class="history-chip status-active">● Active</div>
+            <div class="alert-chip">💬 14 replies</div>
+            <div class="alert-chip">📍 1.2 km</div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:5px;font-weight:600">Asked 32 min ago</div>
+        </div>
+      </div>
+
+      <div class="history-card">
+        <div class="history-map-thumb">⚡</div>
+        <div class="history-body">
+          <div class="history-q">Any power outage in DHA Phase 4 area?</div>
+          <div class="history-meta">
+            <div class="history-chip status-active">● Active</div>
+            <div class="alert-chip">💬 3 replies</div>
+            <div class="alert-chip">📍 7.8 km</div>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:5px;font-weight:600">Asked 1 hour ago</div>
+        </div>
+      </div>
+
+      <div style="padding:0 16px;margin-top:8px">
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">Your Helpfulness Impact</div>
+        <div style="background:var(--glass);border:1px solid var(--glass-border);border-radius:18px;padding:16px;display:flex;gap:16px;">
+          <div style="text-align:center;flex:1">
+            <div style="font-size:28px;font-weight:900;color:var(--sky)">142</div>
+            <div style="font-size:11px;font-weight:700;color:var(--text-muted)">People Helped</div>
+          </div>
+          <div style="width:1px;background:var(--glass-border)"></div>
+          <div style="text-align:center;flex:1">
+            <div style="font-size:28px;font-weight:900;color:var(--green)">4.8★</div>
+            <div style="font-size:11px;font-weight:700;color:var(--text-muted)">Trust Score</div>
+          </div>
+          <div style="width:1px;background:var(--glass-border)"></div>
+          <div style="text-align:center;flex:1">
+            <div style="font-size:28px;font-weight:900;color:var(--orange)">7</div>
+            <div style="font-size:11px;font-weight:700;color:var(--text-muted)">Broadcasts</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="navTo('home',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:rgba(255,255,255,0.4)"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Map</span>
+      </div>
+      <div class="nav-item" onclick="navTo('feed',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:rgba(255,255,255,0.4)"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Feed</span>
+      </div>
+      <div class="nav-item active" onclick="navTo('history',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:#00BFFF"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>My Asks</span>
+      </div>
+      <div class="nav-item" onclick="navTo('profile',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:rgba(255,255,255,0.4)"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Profile</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ████████████████████████████
+       SCREEN: PROFILE
+  ████████████████████████████ -->
+  <div class="screen" id="screen-profile">
+    <div class="profile-header-bg">
+      <div class="profile-top">
+        <div class="profile-avatar">👤</div>
+        <div>
+          <div class="profile-name">Ahmad Siddiqui</div>
+          <div class="profile-handle">@ahmad_geo · Karachi, PK</div>
+          <div class="profile-badges">
+            <div class="chip" style="background:rgba(255,149,0,0.15);color:#FF9500;font-size:10px">🏅 Top Helper</div>
+            <div class="chip" style="background:rgba(0,71,171,0.15);color:#00BFFF;font-size:10px">⭐ Verified</div>
+          </div>
+        </div>
+      </div>
+      <div class="score-row">
+        <div class="score-card">
+          <div class="score-val">75</div>
+          <div class="score-lbl">Helpfulness Score</div>
+        </div>
+        <div class="score-card">
+          <div class="score-val" style="color:#34C759">142</div>
+          <div class="score-lbl">People Helped</div>
+        </div>
+        <div class="score-card">
+          <div class="score-val" style="color:#FF9500">4.8★</div>
+          <div class="score-lbl">Trust Rating</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="settings-section">
+        <!-- Radius tuning -->
+        <div class="settings-label">Radius Tuning</div>
+        <div class="setting-card">
+          <div class="slider-section">
+            <div class="slider-row">
+              <span class="slider-name">Ask Radius</span>
+              <span class="slider-val" id="ask-radius-label">300 m</span>
+            </div>
+            <input type="range" min="100" max="2000" value="300" oninput="document.getElementById('ask-radius-label').textContent=this.value+'m'">
+          </div>
+          <div class="slider-section" style="border-top:1px solid rgba(255,255,255,0.05)">
+            <div class="slider-row">
+              <span class="slider-name">Broadcast Radius</span>
+              <span class="slider-val" id="bc-radius-label">10 km</span>
+            </div>
+            <input type="range" min="1" max="50" value="10" oninput="document.getElementById('bc-radius-label').textContent=this.value+' km'">
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="settings-label">Notifications</div>
+        <div class="setting-card">
+          <div class="setting-row">
+            <div class="setting-icon">🔔</div>
+            <div class="setting-text">
+              <div class="setting-title">Push Notifications</div>
+              <div class="setting-sub">Alerts for broadcasts nearby</div>
+            </div>
+            <div class="toggle-switch on" onclick="toggleSwitch(this)">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-icon">🌙</div>
+            <div class="setting-text">
+              <div class="setting-title">Quiet Hours</div>
+              <div class="setting-sub">11:00 PM – 7:00 AM</div>
+            </div>
+            <div class="setting-arrow">›</div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-icon">🔴</div>
+            <div class="setting-text">
+              <div class="setting-title">Emergency Alerts Only</div>
+              <div class="setting-sub">Override quiet hours</div>
+            </div>
+            <div class="toggle-switch on" onclick="toggleSwitch(this)">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Safety -->
+        <div class="settings-label">Safety & Privacy</div>
+        <div class="setting-card">
+          <div class="setting-row">
+            <div class="setting-icon">🆘</div>
+            <div class="setting-text">
+              <div class="setting-title">Emergency Contacts</div>
+              <div class="setting-sub">2 contacts added</div>
+            </div>
+            <div class="setting-arrow">›</div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-icon">🎭</div>
+            <div class="setting-text">
+              <div class="setting-title">Anonymous Mode</div>
+              <div class="setting-sub">Hide name from responses</div>
+            </div>
+            <div class="toggle-switch off" onclick="toggleSwitch(this)">
+              <div class="toggle-knob"></div>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-icon">🔐</div>
+            <div class="setting-text">
+              <div class="setting-title">Location Sharing</div>
+              <div class="setting-sub">While using the app</div>
+            </div>
+            <div class="setting-arrow" style="color:var(--green);font-weight:700;font-size:12px">ON ›</div>
+          </div>
+        </div>
+
+        <!-- Account -->
+        <div class="settings-label">Account</div>
+        <div class="setting-card">
+          <div class="setting-row" onclick="showToast('📱 Invite link copied!')">
+            <div class="setting-icon">👥</div>
+            <div class="setting-text"><div class="setting-title">Invite Friends</div><div class="setting-sub">Share GeoLinked</div></div>
+            <div class="setting-arrow">›</div>
+          </div>
+          <div class="setting-row" onclick="showToast('⭐ Thanks for the rating!')">
+            <div class="setting-icon">⭐</div>
+            <div class="setting-text"><div class="setting-title">Rate the App</div><div class="setting-sub">Help us improve</div></div>
+            <div class="setting-arrow">›</div>
+          </div>
+          <div class="setting-row" onclick="showToast('🚪 Logging out...')">
+            <div class="setting-icon">🚪</div>
+            <div class="setting-text"><div class="setting-title" style="color:#FF3B30">Sign Out</div></div>
+            <div class="setting-arrow">›</div>
+          </div>
+        </div>
+
+        <div style="height:20px"></div>
+      </div>
+    </div>
+
+    <!-- Nav -->
+    <div class="bottom-nav">
+      <div class="nav-item" onclick="navTo('home',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:rgba(255,255,255,0.4)"><path d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Map</span>
+      </div>
+      <div class="nav-item" onclick="navTo('feed',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:rgba(255,255,255,0.4)"><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Feed</span>
+      </div>
+      <div class="nav-item" onclick="navTo('history',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:rgba(255,255,255,0.4)"><path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>My Asks</span>
+      </div>
+      <div class="nav-item active" onclick="navTo('profile',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" style="color:#00BFFF"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span>Profile</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ████████████████████████████
+       TOAST
+  ████████████████████████████ -->
+  <div id="toast">
+    <span class="toast-icon" id="toast-icon">✅</span>
+    <span class="toast-text" id="toast-text">Action completed!</span>
+  </div>
+
+  <!-- ████████████████████████████
+       MODAL: SUCCESS
+  ████████████████████████████ -->
+  <div class="modal-overlay" id="modal-success" onclick="closeModal('modal-success')">
+    <div class="modal-sheet" onclick="event.stopPropagation()">
+      <div class="modal-close" onclick="closeModal('modal-success')">✕</div>
+      <div class="success-anim">
+        <div class="success-circle" id="success-icon">✅</div>
+        <div class="success-title" id="success-title">Question Sent!</div>
+        <div class="success-sub" id="success-sub">People within 300m will see your question and can reply in seconds.</div>
+        <button class="btn-primary" style="margin-top:8px" onclick="closeModal('modal-success')">Got it 👍</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end #phone -->
+
+<script>
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let currentScreen = 'screen-splash';
+let prevScreen = 'screen-home';
+let fabOpen = false;
+let chatContext = 'safety';
+let toastTimer = null;
+
+const chatData = {
+  traffic: { loc: '📍 Korangi Road, Near Bridge', sub: '3.4 km away · 10km zone · Active', tag: '🚗 Traffic Jam', q: 'Heavy traffic on Korangi Road near the bridge — any alternates?' },
+  safety:  { loc: '📍 Nursery, Shahrah-e-Faisal', sub: '1.2 km away · 300m zone · Active', tag: '🚧 Road Block', q: 'Is the road open near Nursery chowk? Police activity reported.' },
+  market:  { loc: '📍 Empress Market, Saddar', sub: '5.1 km away · 10km zone · Active', tag: '🛒 Market Status', q: 'Is Empress Market open? How are vegetable prices today?' },
+  power:   { loc: '📍 DHA Phase 4', sub: '7.8 km away · 10km zone · Active', tag: '⚡ Utilities', q: 'Any power outage in DHA Phase 4 area?' },
+  ask:     { loc: '📍 Clifton, Karachi', sub: '0.3 km away · 300m zone · Active', tag: '❓ Question', q: 'Is Sunday Bazaar at Clifton open today? How\'s the crowd?' },
+};
+
+// ═══════════════════════════════════════
+// SCREEN NAVIGATION
+// ═══════════════════════════════════════
+function goToScreen(id, direction) {
+  const prev = document.getElementById(currentScreen);
+  const next = document.getElementById(id);
+  if (!next || id === currentScreen) return;
+
+  prev.classList.remove('active');
+  prev.classList.add('slide-left');
+  setTimeout(() => prev.classList.remove('slide-left'), 400);
+
+  next.classList.add('active');
+  prevScreen = currentScreen;
+  currentScreen = id;
+
+  // Trigger alert banner on home
+  if (id === 'screen-home') {
+    setTimeout(showAlertDrop, 1200);
+  }
+}
+
+function goToAuth() { goToScreen('screen-auth'); }
+
+// ═══════════════════════════════════════
+// ONBOARDING
+// ═══════════════════════════════════════
+function obNext(slide) {
+  document.querySelectorAll('.ob-slide').forEach(s => { s.style.display = 'none'; s.classList.remove('active'); });
+  const el = document.getElementById('ob-' + slide);
+  if (el) { el.style.display = 'flex'; el.classList.add('active'); }
+}
+
+// ═══════════════════════════════════════
+// AUTH / LOGIN
+// ═══════════════════════════════════════
+function doLogin() {
+  showToast('🔐 Authenticating…');
+  setTimeout(() => { goToScreen('screen-home'); setTimeout(showAlertDrop, 1500); }, 1200);
+}
+
+// ═══════════════════════════════════════
+// ALERT BANNER
+// ═══════════════════════════════════════
+function showAlertDrop() {
+  const el = document.getElementById('alert-drop');
+  if (!el) return;
+  el.classList.remove('hidden');
+  setTimeout(() => el.classList.add('hidden'), 4000);
+}
+function dismissAlert() {
+  document.getElementById('alert-drop').classList.add('hidden');
+}
+
+// ═══════════════════════════════════════
+// FAB
+// ═══════════════════════════════════════
+function toggleFab() {
+  fabOpen = !fabOpen;
+  document.getElementById('fab-options').classList.toggle('open', fabOpen);
+  document.getElementById('fab-main').classList.toggle('open', fabOpen);
+}
+function closeFab() {
+  fabOpen = false;
+  document.getElementById('fab-options').classList.remove('open');
+  document.getElementById('fab-main').classList.remove('open');
+}
+
+// ═══════════════════════════════════════
+// FILTER CHIPS
+// ═══════════════════════════════════════
+function selectFilter(el, type) {
+  document.querySelectorAll('#filter-row .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  showToast('🗂️ Showing: ' + el.textContent.trim());
+}
+
+// ═══════════════════════════════════════
+// ASK QUESTION
+// ═══════════════════════════════════════
+function submitAsk() {
+  const txt = document.getElementById('ask-text').value.trim();
+  if (!txt) { showToast('✏️ Please type your question first'); return; }
+  document.getElementById('ask-text').value = '';
+  document.getElementById('success-icon').textContent = '✅';
+  document.getElementById('success-title').textContent = 'Question Sent!';
+  document.getElementById('success-sub').textContent = 'People within 300m will see your question. You\'ll be notified when someone replies.';
+  openModal('modal-success');
+}
+
+// ═══════════════════════════════════════
+// BROADCAST
+// ═══════════════════════════════════════
+function selectBType(el, type) {
+  document.querySelectorAll('.btype-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+function updateRadius(val) {
+  document.getElementById('radius-label').textContent = val + ' km';
+}
+function submitBroadcast() {
+  const txt = document.getElementById('broadcast-text').value.trim();
+  if (!txt) { showToast('✏️ Please type your alert message'); return; }
+  document.getElementById('broadcast-text').value = '';
+  document.getElementById('success-icon').textContent = '📢';
+  document.getElementById('success-title').textContent = 'Broadcast Sent!';
+  document.getElementById('success-sub').textContent = 'Your alert is now live. People in the radius will be notified instantly.';
+  openModal('modal-success');
+  setTimeout(() => goToScreen('screen-home'), 2000);
+}
+
+// ═══════════════════════════════════════
+// CHAT
+// ═══════════════════════════════════════
+function openChat(type) {
+  chatContext = type;
+  const d = chatData[type] || chatData.safety;
+  document.getElementById('chat-loc-name').textContent = d.loc;
+  document.getElementById('chat-loc-sub').textContent = d.sub;
+  document.getElementById('chat-question').textContent = d.q;
+  goToScreen('screen-chat');
+}
+function chatBack() {
+  goToScreen(prevScreen !== 'screen-chat' ? prevScreen : 'screen-home');
+}
+function sendChatMsg() {
+  const f = document.getElementById('chat-input-field');
+  const txt = f.value.trim();
+  if (!txt) return;
+  const list = document.getElementById('messages-list');
+  const div = document.createElement('div');
+  div.className = 'msg';
+  div.innerHTML = `<div class="msg-bubble mine">${txt}</div>
+    <div class="msg-meta mine"><span class="msg-time">Just now</span><span class="msg-user">You</span></div>`;
+  list.appendChild(div);
+  f.value = '';
+  list.scrollTop = list.scrollHeight;
+  // Simulated reply
+  setTimeout(() => {
+    const r = document.createElement('div');
+    r.className = 'msg';
+    r.innerHTML = `<div class="msg-bubble">Thanks for the info! Situation noted. 👍</div>
+      <div class="msg-meta"><span class="msg-user">Local User</span><span style="font-size:11px;color:#00BFFF;font-weight:700">nearby</span><span class="msg-time">just now</span></div>`;
+    list.appendChild(r);
+    list.scrollTop = list.scrollHeight;
+  }, 1400);
+}
+function vote(btn, type) {
+  btn.classList.add('voted');
+  const isYes = type === 'yes';
+  showToast(isYes ? '✅ Marked as correct!' : '❌ Marked as incorrect');
+  btn.disabled = true;
+  const sibling = btn.parentNode.querySelector(isYes ? '.verify-no' : '.verify-yes');
+  if (sibling) sibling.disabled = true;
+}
+function resolveChat() {
+  showToast('✅ Question marked as resolved!');
+  setTimeout(() => goToScreen('screen-history'), 1000);
+}
+
+// ═══════════════════════════════════════
+// FEED TABS
+// ═══════════════════════════════════════
+function feedTab(el, type) {
+  el.parentNode.querySelectorAll('.feed-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ═══════════════════════════════════════
+// HISTORY SEG TABS
+// ═══════════════════════════════════════
+function segTab(el, type) {
+  el.parentNode.querySelectorAll('.seg-btn').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  showToast('📂 Showing: ' + el.textContent);
+}
+
+// ═══════════════════════════════════════
+// PROFILE TOGGLES
+// ═══════════════════════════════════════
+function toggleSwitch(el) {
+  el.classList.toggle('on');
+  el.classList.toggle('off');
+  showToast(el.classList.contains('on') ? '✅ Enabled' : '⭕ Disabled');
+}
+
+// ═══════════════════════════════════════
+// NAV SYSTEM
+// ═══════════════════════════════════════
+const screenMap = {
+  home: 'screen-home',
+  feed: 'screen-feed',
+  history: 'screen-history',
+  profile: 'screen-profile',
+};
+function navTo(key, el) {
+  closeFab();
+  // Update all nav bars
+  document.querySelectorAll('.bottom-nav').forEach(nav => {
+    nav.querySelectorAll('.nav-item').forEach(item => {
+      item.classList.remove('active');
+      item.querySelector('svg').style.color = 'rgba(255,255,255,0.4)';
+    });
+  });
+  // Set active on clicked
+  el.classList.add('active');
+  el.querySelector('svg').style.color = '#00BFFF';
+  goToScreen(screenMap[key]);
+}
+
+// ═══════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════
+function showToast(msg) {
+  const toast = document.getElementById('toast');
+  const [icon, ...rest] = msg;
+  document.getElementById('toast-icon').textContent = icon;
+  document.getElementById('toast-text').textContent = rest.join('').trim();
+  toast.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2500);
+}
+
+// ═══════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ═══════════════════════════════════════
+// BOOT SEQUENCE
+// ═══════════════════════════════════════
+window.addEventListener('load', () => {
+  // Splash → Onboard after 3s
+  setTimeout(() => { goToScreen('screen-onboard'); }, 3000);
+});
+
+// Close FAB on outside tap
+document.getElementById('phone').addEventListener('click', (e) => {
+  if (fabOpen && !e.target.closest('.fab-container')) closeFab();
+});
+
+// Simulated live updates
+setInterval(() => {
+  if (currentScreen === 'screen-home') {
+    const events = [
+      '🔔 New alert: Water outage in Gulshan',
+      '💬 3 people answered your question!',
+      '🚦 Traffic cleared on MA Jinnah Rd',
+      '⚡ Load shedding starts in 30 min',
+    ];
+    const msg = events[Math.floor(Math.random() * events.length)];
+    // Silently update badge
+  }
+}, 15000);
+</script>
+
+<!-- Float animation keyframe -->
+<style>
+@keyframes floatUp { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+@keyframes pinDrop { 0%{transform:translate(-50%,-120%);opacity:0} 60%{transform:translate(-50%,-95%)} 80%{transform:translate(-50%,-105%)} 100%{transform:translate(-50%,-100%);opacity:1} }
+</style>
+</body>
+</html>

@@ -98,7 +98,7 @@ class AppTheme {
         ),
         labelStyle: AppTextStyles.label,
         hintStyle: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.textMuted,
+          color: AppColors.textTertiary,
         ),
         errorStyle: AppTextStyles.error,
       ),
@@ -110,7 +110,7 @@ class AppTheme {
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.surface,
         selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textMuted,
+        unselectedItemColor: AppColors.textTertiary,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
@@ -222,7 +222,7 @@ class AppTheme {
         ),
         labelStyle: AppTextStyles.label.copyWith(color: AppColors.textLight),
         hintStyle: AppTextStyles.bodyMedium.copyWith(
-          color: AppColors.textMuted,
+          color: AppColors.textTertiaryDark,
         ),
         errorStyle: AppTextStyles.error,
       ),
@@ -234,7 +234,7 @@ class AppTheme {
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: AppColors.surfaceDark,
         selectedItemColor: AppColors.primaryLight,
-        unselectedItemColor: AppColors.textMuted,
+        unselectedItemColor: AppColors.textTertiaryDark,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),

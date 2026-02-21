@@ -1,148 +1,210 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/app_text.dart';
 import '../../login/view/login_view.dart';
-import '../controller/controller.dart';
-import '../widgets/widgets.dart';
+import '../controller/settings_controller.dart';
+import '../widgets/settings_widgets.dart';
 
-/// Settings Screen
+/// Settings/Profile View
 class SettingsView extends ConsumerWidget {
   const SettingsView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(settingsControllerProvider);
+    final state = ref.watch(settingsControllerProvider);
     final controller = ref.read(settingsControllerProvider.notifier);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(title: AppText.h5('Settings'), centerTitle: true),
-      body: ListView(
-        children: [
-          // Appearance Section
-          const SettingsSectionHeader(title: 'Appearance'),
-          SettingsToggleTile(
-            title: 'Dark Mode',
-            subtitle: 'Switch between light and dark theme',
-            icon: Icons.dark_mode,
-            value: settings.isDarkMode,
-            onChanged: (value) => controller.setDarkMode(value),
-          ),
-          SettingsNavigationTile(
-            title: 'Language',
-            subtitle: _getLanguageName(settings.language),
-            icon: Icons.language,
-            onTap: () =>
-                _showLanguageDialog(context, controller, settings.language),
-          ),
+      backgroundColor: isDark
+          ? const Color(0xFF0A0A0F)
+          : const Color(0xFFF5F5F7),
+      body: state.isLoading
+          ? const _LoadingView()
+          : CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: state.profile != null
+                      ? ProfileHeader(
+                          profile: state.profile!,
+                          onEditProfile: () => _editProfile(context),
+                          isDark: isDark,
+                        )
+                      : const SizedBox.shrink(),
+                ),
+                SliverToBoxAdapter(
+                  child: state.profile != null
+                      ? ScoreRing(
+                          score: state.profile!.reputationScore,
+                          percentage: state.profile!.scorePercentage,
+                          level: state.profile!.level,
+                          isDark: isDark,
+                        )
+                      : const SizedBox.shrink(),
+                ),
 
-          // Notifications Section
-          const SettingsSectionHeader(title: 'Notifications'),
-          SettingsToggleTile(
-            title: 'Push Notifications',
-            subtitle: 'Receive alerts and updates',
-            icon: Icons.notifications,
-            value: settings.notificationsEnabled,
-            onChanged: (value) => controller.setNotifications(value),
-          ),
+                // Appearance
+                SliverToBoxAdapter(
+                  child: SettingsGroupHeader(
+                    title: 'APPEARANCE',
+                    icon: Icons.palette_outlined,
+                    isDark: isDark,
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: ThemeSelector(
+                    isDarkMode: state.isDarkMode,
+                    onChanged: controller.setDarkMode,
+                    isDark: isDark,
+                  ),
+                ),
 
-          // Location Section
-          const SettingsSectionHeader(title: 'Location'),
-          SettingsToggleTile(
-            title: 'Location Services',
-            subtitle: 'Allow app to access your location',
-            icon: Icons.location_on,
-            value: settings.locationEnabled,
-            onChanged: (value) => controller.setLocation(value),
-          ),
-          SettingsSliderTile(
-            title: 'Default Map Zoom',
-            subtitle: 'Initial zoom level when opening map',
-            icon: Icons.zoom_in,
-            value: settings.mapZoomDefault,
-            min: 5.0,
-            max: 20.0,
-            divisions: 15,
-            onChanged: (value) => controller.setMapZoomDefault(value),
-          ),
+                // Notifications
+                SliverToBoxAdapter(
+                  child: SettingsGroupHeader(
+                    title: 'NOTIFICATIONS',
+                    icon: Icons.notifications_outlined,
+                    isDark: isDark,
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: SettingsCard(
+                    isDark: isDark,
+                    children: [
+                      SettingsToggleRow(
+                        title: 'Nearby Alerts',
+                        subtitle: 'Get notified about nearby broadcasts',
+                        icon: Icons.broadcast_on_home_outlined,
+                        value: state.nearbyAlertsEnabled,
+                        onChanged: controller.setNearbyAlerts,
+                        isDark: isDark,
+                      ),
+                      SettingsToggleRow(
+                        title: 'Chat Messages',
+                        subtitle: 'Receive reply notifications',
+                        icon: Icons.chat_bubble_outline_rounded,
+                        value: state.chatMessagesEnabled,
+                        onChanged: controller.setChatMessages,
+                        isDark: isDark,
+                      ),
+                      SettingsToggleRow(
+                        title: 'Community Updates',
+                        subtitle: 'Weekly community digest',
+                        icon: Icons.people_outline_rounded,
+                        value: state.communityUpdatesEnabled,
+                        onChanged: controller.setCommunityUpdates,
+                        isDark: isDark,
+                      ),
+                    ],
+                  ),
+                ),
 
-          // Account Section
-          const SettingsSectionHeader(title: 'Account'),
-          SettingsNavigationTile(
-            title: 'Profile',
-            subtitle: 'Manage your profile information',
-            icon: Icons.person,
-            onTap: () {
-              // Navigate to profile
-            },
-          ),
-          SettingsNavigationTile(
-            title: 'Privacy',
-            subtitle: 'Privacy settings and data',
-            icon: Icons.privacy_tip,
-            onTap: () {
-              // Navigate to privacy
-            },
-          ),
-          SettingsNavigationTile(
-            title: 'Security',
-            subtitle: 'Password and authentication',
-            icon: Icons.security,
-            onTap: () {
-              // Navigate to security
-            },
-          ),
+                // Location & Privacy
+                SliverToBoxAdapter(
+                  child: SettingsGroupHeader(
+                    title: 'LOCATION & PRIVACY',
+                    icon: Icons.location_on_outlined,
+                    isDark: isDark,
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: SettingsCard(
+                    isDark: isDark,
+                    children: [
+                      SettingsToggleRow(
+                        title: 'Location Services',
+                        subtitle: 'Allow location access',
+                        icon: Icons.my_location_rounded,
+                        value: state.locationEnabled,
+                        onChanged: controller.setLocation,
+                        isDark: isDark,
+                      ),
+                      SettingsNavRow(
+                        title: 'Alert Radius',
+                        subtitle: '${state.alertRadius}m',
+                        icon: Icons.radar_rounded,
+                        onTap: () => _showRadiusSelector(
+                          context,
+                          controller,
+                          state.alertRadius,
+                        ),
+                        isDark: isDark,
+                      ),
+                      SettingsNavRow(
+                        title: 'Privacy Settings',
+                        icon: Icons.shield_outlined,
+                        onTap: () {},
+                        isDark: isDark,
+                      ),
+                    ],
+                  ),
+                ),
 
-          // About Section
-          const SettingsSectionHeader(title: 'About'),
-          SettingsNavigationTile(
-            title: 'Help & Support',
-            icon: Icons.help,
-            onTap: () {
-              // Navigate to help
-            },
-          ),
-          SettingsNavigationTile(
-            title: 'Terms of Service',
-            icon: Icons.description,
-            onTap: () {
-              // Navigate to terms
-            },
-          ),
-          SettingsNavigationTile(
-            title: 'Privacy Policy',
-            icon: Icons.policy,
-            onTap: () {
-              // Navigate to privacy policy
-            },
-          ),
-          const SettingsNavigationTile(
-            title: 'App Version',
-            icon: Icons.info,
-            trailing: Text(
-              '1.0.0',
-              style: TextStyle(color: AppColors.textMuted),
+                // Account
+                SliverToBoxAdapter(
+                  child: SettingsGroupHeader(
+                    title: 'ACCOUNT',
+                    icon: Icons.person_outline_rounded,
+                    isDark: isDark,
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: SettingsCard(
+                    isDark: isDark,
+                    children: [
+                      SettingsNavRow(
+                        title: 'Edit Profile',
+                        icon: Icons.edit_outlined,
+                        onTap: () => _editProfile(context),
+                        isDark: isDark,
+                      ),
+                      SettingsNavRow(
+                        title: 'Language',
+                        subtitle: _getLanguageName(state.language),
+                        icon: Icons.language_rounded,
+                        onTap: () => _showLanguageDialog(
+                          context,
+                          controller,
+                          state.language,
+                        ),
+                        isDark: isDark,
+                      ),
+                      SettingsNavRow(
+                        title: 'Help & Support',
+                        icon: Icons.help_outline_rounded,
+                        onTap: () {},
+                        isDark: isDark,
+                      ),
+                      SettingsNavRow(
+                        title: 'About',
+                        icon: Icons.info_outline_rounded,
+                        onTap: () {},
+                        isDark: isDark,
+                      ),
+                    ],
+                  ),
+                ),
+
+                SliverToBoxAdapter(
+                  child: LogoutButton(
+                    onTap: () => _showLogoutDialog(context, controller),
+                    isDark: isDark,
+                  ),
+                ),
+
+                const SliverToBoxAdapter(
+                  child: AppVersionInfo(version: '1.0.0', isDark: false),
+                ),
+
+                const SliverToBoxAdapter(child: SizedBox(height: 32)),
+              ],
             ),
-          ),
-
-          // Actions Section
-          const SettingsSectionHeader(title: 'Actions'),
-          SettingsActionTile(
-            title: 'Reset Settings',
-            icon: Icons.restore,
-            color: AppColors.warning,
-            onTap: () => _showResetDialog(context, controller),
-          ),
-          SettingsActionTile(
-            title: 'Log Out',
-            icon: Icons.logout,
-            onTap: () => _showLogoutDialog(context),
-          ),
-
-          const SizedBox(height: 32),
-        ],
-      ),
     );
+  }
+
+  void _editProfile(BuildContext context) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Edit profile')));
   }
 
   String _getLanguageName(String code) {
@@ -174,90 +236,210 @@ class SettingsView extends ConsumerWidget {
       ('de', 'Deutsch'),
       ('ar', 'العربية'),
     ];
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Language'),
-        content: Column(
+      backgroundColor: isDark ? const Color(0xFF1A1A2E) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => SafeArea(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: languages.map((lang) {
-            return RadioListTile<String>(
-              title: Text(lang.$2),
-              value: lang.$1,
-              groupValue: currentLanguage,
-              activeColor: AppColors.primary,
-              onChanged: (value) {
-                if (value != null) {
-                  controller.setLanguage(value);
+          children: [
+            const SizedBox(height: 8),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Select Language',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 16),
+            ...languages.map(
+              (lang) => ListTile(
+                title: Text(
+                  lang.$2,
+                  style: TextStyle(
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                trailing: currentLanguage == lang.$1
+                    ? const Icon(Icons.check_circle, color: Color(0xFF0047AB))
+                    : null,
+                onTap: () {
+                  controller.setLanguage(lang.$1);
                   Navigator.pop(context);
-                }
-              },
-            );
-          }).toList(),
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
         ),
       ),
     );
   }
 
-  void _showResetDialog(BuildContext context, SettingsController controller) {
-    showDialog(
+  void _showRadiusSelector(
+    BuildContext context,
+    SettingsController controller,
+    int currentRadius,
+  ) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    int selectedRadius = currentRadius;
+
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Reset Settings'),
-        content: const Text(
-          'Are you sure you want to reset all settings to defaults?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () {
-              controller.resetToDefaults();
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Settings reset to defaults')),
-              );
-            },
-            child: const Text(
-              'Reset',
-              style: TextStyle(color: AppColors.warning),
+      backgroundColor: isDark ? const Color(0xFF1A1A2E) : Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'Alert Radius',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '${selectedRadius}m',
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0047AB),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Slider(
+                  value: selectedRadius.toDouble(),
+                  min: 100,
+                  max: 2000,
+                  divisions: 19,
+                  activeColor: const Color(0xFF0047AB),
+                  onChanged: (value) {
+                    setState(() {
+                      selectedRadius = value.toInt();
+                    });
+                  },
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      controller.setAlertRadius(selectedRadius);
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF0047AB),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    child: const Text(
+                      'Apply',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  void _showLogoutDialog(BuildContext context) {
+  void _showLogoutDialog(BuildContext context, SettingsController controller) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Log Out'),
-        content: const Text('Are you sure you want to log out?'),
+        backgroundColor: isDark ? const Color(0xFF1A1A2E) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          'Log Out',
+          style: TextStyle(color: isDark ? Colors.white : Colors.black87),
+        ),
+        content: Text(
+          'Are you sure you want to log out?',
+          style: TextStyle(
+            color: (isDark ? Colors.white : Colors.black).withValues(
+              alpha: 0.7,
+            ),
+          ),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(
+              'Cancel',
+              style: TextStyle(
+                color: (isDark ? Colors.white : Colors.black).withValues(
+                  alpha: 0.5,
+                ),
+              ),
+            ),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              // Navigate to login and clear stack
+              controller.logout();
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const LoginView()),
                 (route) => false,
               );
             },
-            child: const Text(
-              'Log Out',
-              style: TextStyle(color: AppColors.error),
-            ),
+            child: const Text('Log Out', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _LoadingView extends StatelessWidget {
+  const _LoadingView();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: CircularProgressIndicator(color: Color(0xFF0047AB)),
     );
   }
 }

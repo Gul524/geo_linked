@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/widgets.dart';
 import '../../home/view/home_view.dart';
-import '../../signup/view/signup_view.dart';
 import '../controller/controller.dart';
 import '../widgets/widgets.dart';
 
@@ -16,181 +15,156 @@ class LoginView extends ConsumerStatefulWidget {
 }
 
 class _LoginViewState extends ConsumerState<LoginView> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
+  void _showCountryPicker() {
+    final loginState = ref.read(loginControllerProvider);
+    final controller = ref.read(loginControllerProvider.notifier);
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => CountryPickerSheet(
+        countries: LoginController.countryCodes,
+        selectedCountry: loginState.selectedCountry,
+        onSelect: controller.setCountry,
+      ),
+    );
   }
 
-  Future<void> _handleLogin() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      final success = await ref.read(loginControllerProvider.notifier).login();
-      if (success && mounted) {
-        Navigator.of(
-          context,
-        ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeView()));
-      }
+  Future<void> _handleAppleSignIn() async {
+    final success = await ref
+        .read(loginControllerProvider.notifier)
+        .signInWithApple();
+    if (success && mounted) {
+      _navigateToHome();
     }
   }
 
-  void _navigateToSignup() {
+  Future<void> _handleGoogleSignIn() async {
+    final success = await ref
+        .read(loginControllerProvider.notifier)
+        .signInWithGoogle();
+    if (success && mounted) {
+      _navigateToHome();
+    }
+  }
+
+  Future<void> _handleContinue() async {
+    final success = await ref
+        .read(loginControllerProvider.notifier)
+        .continueWithPhone();
+    if (success && mounted) {
+      _navigateToHome();
+    }
+  }
+
+  void _navigateToHome() {
     Navigator.of(
       context,
-    ).push(MaterialPageRoute(builder: (_) => const SignupView()));
+    ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeView()));
   }
 
   @override
   Widget build(BuildContext context) {
     final loginState = ref.watch(loginControllerProvider);
     final loginController = ref.read(loginControllerProvider.notifier);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AppLoadingOverlay(
       isLoading: loginState.isLoading,
       loadingText: 'Signing in...',
       child: Scaffold(
-        backgroundColor: AppColors.background,
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 60),
+        backgroundColor: isDark
+            ? AppColors.backgroundDark
+            : AppColors.background,
+        body: SingleChildScrollView(
+          child: Column(
+            children: [
+              // Hero Section
+              const LoginHero(),
 
-                  // Logo
-                  const LoginLogo(),
-                  const SizedBox(height: 48),
+              // Content
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 32),
 
-                  // Welcome text
-                  AppText.h3('Welcome Back!', textAlign: TextAlign.center),
-                  const SizedBox(height: 8),
-                  AppText.body(
-                    'Sign in to continue',
-                    textAlign: TextAlign.center,
-                    color: AppColors.textSecondary,
-                  ),
-                  const SizedBox(height: 40),
-
-                  // Error message
-                  if (loginState.error != null) ...[
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: AppColors.error.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.error_outline,
-                            color: AppColors.error,
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: AppText.body(
-                              loginState.error!,
+                    // Error message
+                    if (loginState.error != null) ...[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
                               color: AppColors.error,
+                              size: 20,
                             ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-
-                  // Email field
-                  AppTextField.email(
-                    controller: _emailController,
-                    onChanged: loginController.setEmail,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!RegExp(
-                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                      ).hasMatch(value)) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Password field
-                  AppTextField.password(
-                    controller: _passwordController,
-                    onChanged: loginController.setPassword,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your password';
-                      }
-                      if (value.length < 6) {
-                        return 'Password must be at least 6 characters';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Forgot password
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: () {
-                        // TODO: Implement forgot password
-                      },
-                      child: AppText.body(
-                        'Forgot Password?',
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Login button
-                  AppButton.primary(
-                    text: 'Sign In',
-                    onPressed: _handleLogin,
-                    size: AppButtonSize.large,
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Divider
-                  const LoginDivider(),
-                  const SizedBox(height: 24),
-
-                  // Social login buttons
-                  const SocialLoginButtons(),
-                  const SizedBox(height: 32),
-
-                  // Sign up link
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      AppText.body(
-                        "Don't have an account? ",
-                        color: AppColors.textSecondary,
-                      ),
-                      GestureDetector(
-                        onTap: _navigateToSignup,
-                        child: AppText.body(
-                          'Sign Up',
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.bold,
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                loginState.error!,
+                                style: const TextStyle(
+                                  color: AppColors.error,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      const SizedBox(height: 24),
                     ],
-                  ),
-                ],
+
+                    // Social Sign In Buttons
+                    SocialSignInButton.apple(onPressed: _handleAppleSignIn),
+                    const SizedBox(height: 12),
+                    SocialSignInButton.google(onPressed: _handleGoogleSignIn),
+
+                    const SizedBox(height: 32),
+
+                    // Divider
+                    const AuthDivider(),
+
+                    const SizedBox(height: 32),
+
+                    // Phone Input
+                    PhoneInputField(
+                      phoneNumber: loginState.phoneNumber,
+                      selectedCountry: loginState.selectedCountry,
+                      isFocused: loginState.isPhoneInputFocused,
+                      onPhoneChanged: loginController.setPhoneNumber,
+                      onCountryTap: _showCountryPicker,
+                      onFocusChange: () {
+                        loginController.setPhoneInputFocus(
+                          !loginState.isPhoneInputFocused,
+                        );
+                      },
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Continue Button
+                    ContinueButton(
+                      onPressed: _handleContinue,
+                      isEnabled: loginState.phoneNumber.isNotEmpty,
+                    ),
+
+                    const SizedBox(height: 40),
+
+                    // Privacy Badge
+                    const LocationPrivacyBadge(),
+
+                    const SizedBox(height: 24),
+                  ],
+                ),
               ),
-            ),
+            ],
           ),
         ),
       ),

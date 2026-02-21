@@ -2,48 +2,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Question category model
 enum QuestionCategory {
-  general,
-  directions,
-  recommendations,
-  events,
-  safety,
-  other,
-}
+  general('General', '💬'),
+  directions('Directions', '🗺️'),
+  recommendations('Recommendations', '⭐'),
+  events('Events', '🎉'),
+  safety('Safety', '🛡️'),
+  traffic('Traffic', '🚗'),
+  other('Other', '❓');
 
-extension QuestionCategoryExtension on QuestionCategory {
-  String get displayName {
-    switch (this) {
-      case QuestionCategory.general:
-        return 'General';
-      case QuestionCategory.directions:
-        return 'Directions';
-      case QuestionCategory.recommendations:
-        return 'Recommendations';
-      case QuestionCategory.events:
-        return 'Events';
-      case QuestionCategory.safety:
-        return 'Safety';
-      case QuestionCategory.other:
-        return 'Other';
-    }
-  }
-
-  String get icon {
-    switch (this) {
-      case QuestionCategory.general:
-        return '💬';
-      case QuestionCategory.directions:
-        return '🗺️';
-      case QuestionCategory.recommendations:
-        return '⭐';
-      case QuestionCategory.events:
-        return '🎉';
-      case QuestionCategory.safety:
-        return '🛡️';
-      case QuestionCategory.other:
-        return '❓';
-    }
-  }
+  final String displayName;
+  final String icon;
+  const QuestionCategory(this.displayName, this.icon);
 }
 
 /// Ask question feature state
@@ -51,67 +20,71 @@ class AskQuestionState {
   final bool isLoading;
   final String? error;
   final bool isSubmitted;
-  final String title;
-  final String description;
+  final String question;
   final QuestionCategory category;
-  final bool includeLocation;
-  final List<String> tags;
+  final int radiusMeters; // 100m to 1000m
+  final double userLat;
+  final double userLng;
+  final bool isAnonymous;
 
   const AskQuestionState({
     this.isLoading = false,
     this.error,
     this.isSubmitted = false,
-    this.title = '',
-    this.description = '',
+    this.question = '',
     this.category = QuestionCategory.general,
-    this.includeLocation = true,
-    this.tags = const [],
+    this.radiusMeters = 300,
+    this.userLat = 37.7749,
+    this.userLng = -122.4194,
+    this.isAnonymous = false,
   });
 
   AskQuestionState copyWith({
     bool? isLoading,
     String? error,
     bool? isSubmitted,
-    String? title,
-    String? description,
+    String? question,
     QuestionCategory? category,
-    bool? includeLocation,
-    List<String>? tags,
+    int? radiusMeters,
+    double? userLat,
+    double? userLng,
+    bool? isAnonymous,
   }) {
     return AskQuestionState(
       isLoading: isLoading ?? this.isLoading,
       error: error,
       isSubmitted: isSubmitted ?? this.isSubmitted,
-      title: title ?? this.title,
-      description: description ?? this.description,
+      question: question ?? this.question,
       category: category ?? this.category,
-      includeLocation: includeLocation ?? this.includeLocation,
-      tags: tags ?? this.tags,
+      radiusMeters: radiusMeters ?? this.radiusMeters,
+      userLat: userLat ?? this.userLat,
+      userLng: userLng ?? this.userLng,
+      isAnonymous: isAnonymous ?? this.isAnonymous,
     );
   }
 
-  /// Check if title is valid
-  bool get isTitleValid => title.trim().length >= 10;
+  /// Check if question is valid (at least 10 chars)
+  bool get isQuestionValid => question.trim().length >= 10;
 
-  /// Check if description is valid
-  bool get isDescriptionValid => description.trim().length >= 20;
+  /// Get radius as formatted string
+  String get radiusFormatted {
+    if (radiusMeters >= 1000) {
+      return '${(radiusMeters / 1000).toStringAsFixed(1)}km';
+    }
+    return '${radiusMeters}m';
+  }
 
-  /// Check if form is valid
-  bool get isFormValid => isTitleValid && isDescriptionValid;
+  /// Get radius as percentage (for slider)
+  double get radiusPercent => (radiusMeters - 100) / 900;
 }
 
 /// Ask Question Controller - Manages the state of ask question screen
 class AskQuestionController extends StateNotifier<AskQuestionState> {
   AskQuestionController() : super(const AskQuestionState());
 
-  /// Update title
-  void setTitle(String title) {
-    state = state.copyWith(title: title, error: null);
-  }
-
-  /// Update description
-  void setDescription(String description) {
-    state = state.copyWith(description: description, error: null);
+  /// Update question text
+  void setQuestion(String question) {
+    state = state.copyWith(question: question, error: null);
   }
 
   /// Update category
@@ -119,33 +92,33 @@ class AskQuestionController extends StateNotifier<AskQuestionState> {
     state = state.copyWith(category: category);
   }
 
-  /// Toggle include location
-  void toggleIncludeLocation() {
-    state = state.copyWith(includeLocation: !state.includeLocation);
+  /// Update radius
+  void setRadius(int meters) {
+    // Clamp between 100m and 1000m
+    final clamped = meters.clamp(100, 1000);
+    state = state.copyWith(radiusMeters: clamped);
   }
 
-  /// Add tag
-  void addTag(String tag) {
-    if (tag.isNotEmpty && !state.tags.contains(tag) && state.tags.length < 5) {
-      state = state.copyWith(tags: [...state.tags, tag]);
-    }
+  /// Set radius from slider (0.0 to 1.0)
+  void setRadiusFromSlider(double value) {
+    final meters = (100 + (value * 900)).round();
+    setRadius(meters);
   }
 
-  /// Remove tag
-  void removeTag(String tag) {
-    state = state.copyWith(tags: state.tags.where((t) => t != tag).toList());
+  /// Toggle anonymous mode
+  void toggleAnonymous() {
+    state = state.copyWith(isAnonymous: !state.isAnonymous);
+  }
+
+  /// Update user location
+  void setUserLocation(double lat, double lng) {
+    state = state.copyWith(userLat: lat, userLng: lng);
   }
 
   /// Submit question
   Future<bool> submitQuestion() async {
-    if (!state.isFormValid) {
-      if (!state.isTitleValid) {
-        state = state.copyWith(error: 'Title must be at least 10 characters');
-      } else if (!state.isDescriptionValid) {
-        state = state.copyWith(
-          error: 'Description must be at least 20 characters',
-        );
-      }
+    if (!state.isQuestionValid) {
+      state = state.copyWith(error: 'Question must be at least 10 characters');
       return false;
     }
 

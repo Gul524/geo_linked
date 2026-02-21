@@ -5,7 +5,7 @@ import '../../../shared/widgets/widgets.dart';
 import '../controller/controller.dart';
 import '../widgets/widgets.dart';
 
-/// Ask Question View - Screen for posting new questions
+/// Ask Question View - Screen for posting new questions with map and radius
 class AskQuestionView extends ConsumerStatefulWidget {
   const AskQuestionView({super.key});
 
@@ -14,36 +14,20 @@ class AskQuestionView extends ConsumerStatefulWidget {
 }
 
 class _AskQuestionViewState extends ConsumerState<AskQuestionView> {
-  final _titleController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _tagController = TextEditingController();
-  final _formKey = GlobalKey<FormState>();
-
   @override
   void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    _tagController.dispose();
+    // Reset controller state when leaving
+    ref.read(askQuestionControllerProvider.notifier).reset();
     super.dispose();
   }
 
   Future<void> _handleSubmit() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      final success = await ref
-          .read(askQuestionControllerProvider.notifier)
-          .submitQuestion();
-      if (success && mounted) {
-        AppSnackbar.success(context, message: 'Question posted successfully!');
-        Navigator.pop(context);
-      }
-    }
-  }
-
-  void _addTag() {
-    final tag = _tagController.text.trim();
-    if (tag.isNotEmpty) {
-      ref.read(askQuestionControllerProvider.notifier).addTag(tag);
-      _tagController.clear();
+    final success = await ref
+        .read(askQuestionControllerProvider.notifier)
+        .submitQuestion();
+    if (success && mounted) {
+      AppSnackbar.success(context, message: 'Question posted successfully!');
+      Navigator.pop(context);
     }
   }
 
@@ -51,201 +35,112 @@ class _AskQuestionViewState extends ConsumerState<AskQuestionView> {
   Widget build(BuildContext context) {
     final askState = ref.watch(askQuestionControllerProvider);
     final askController = ref.read(askQuestionControllerProvider.notifier);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AppLoadingOverlay(
       isLoading: askState.isLoading,
       loadingText: 'Posting question...',
       child: Scaffold(
-        backgroundColor: AppColors.background,
-        appBar: AppBar(
-          title: AppText.h5('Ask a Question'),
-          centerTitle: true,
-          leading: IconButton(
-            icon: const Icon(Icons.close),
-            onPressed: () => Navigator.pop(context),
-          ),
-          actions: [
-            TextButton(
-              onPressed: askState.isFormValid ? _handleSubmit : null,
-              child: AppText.body(
-                'Post',
-                color: askState.isFormValid
-                    ? AppColors.primary
-                    : AppColors.textMuted,
-                fontWeight: FontWeight.w600,
-              ),
+        backgroundColor: isDark
+            ? AppColors.backgroundDark
+            : AppColors.background,
+        body: Stack(
+          children: [
+            // Map background with radius circle
+            AskQuestionMap(
+              radiusMeters: askState.radiusMeters,
+              centerLat: askState.userLat,
+              centerLng: askState.userLng,
             ),
-          ],
-        ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Error message
-                if (askState.error != null) ...[
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.error.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.error_outline, color: AppColors.error),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: AppText.body(
-                            askState.error!,
-                            color: AppColors.error,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
 
-                // Title
-                AppText.body('Question Title', fontWeight: FontWeight.w600),
-                const SizedBox(height: 8),
-                AppTextField.text(
-                  controller: _titleController,
-                  hintText: 'What would you like to ask?',
-                  maxLength: 100,
-                  onChanged: askController.setTitle,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter a title';
-                    }
-                    if (value.trim().length < 10) {
-                      return 'Title must be at least 10 characters';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // Description
-                AppText.body('Description', fontWeight: FontWeight.w600),
-                const SizedBox(height: 8),
-                AppTextField.multiline(
-                  controller: _descriptionController,
-                  hintText: 'Provide more details about your question...',
-                  maxLength: 500,
-                  minLines: 4,
-                  maxLines: 8,
-                  onChanged: askController.setDescription,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Please enter a description';
-                    }
-                    if (value.trim().length < 20) {
-                      return 'Description must be at least 20 characters';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 20),
-
-                // Category
-                AppText.body('Category', fontWeight: FontWeight.w600),
-                const SizedBox(height: 8),
-                CategorySelector(
-                  selectedCategory: askState.category,
-                  onCategorySelected: askController.setCategory,
-                ),
-                const SizedBox(height: 20),
-
-                // Tags
-                AppText.body('Tags (optional)', fontWeight: FontWeight.w600),
-                const SizedBox(height: 8),
-                Row(
+            // Top bar
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
                   children: [
-                    Expanded(
-                      child: AppTextField.text(
-                        controller: _tagController,
-                        hintText: 'Add a tag',
-                        textInputAction: TextInputAction.done,
-                        onSubmitted: (_) => _addTag(),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    AppIconButton.circle(
-                      icon: Icons.add,
-                      backgroundColor: AppColors.primary,
-                      iconColor: Colors.white,
-                      onPressed: _addTag,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                TagsList(
-                  tags: askState.tags,
-                  onRemoveTag: askController.removeTag,
-                ),
-                const SizedBox(height: 20),
-
-                // Location toggle
-                AppCard.outlined(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
+                    // Back button
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: Container(
+                        width: 44,
+                        height: 44,
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(
-                          Icons.location_on,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            AppText.body(
-                              'Include Location',
-                              fontWeight: FontWeight.w500,
-                            ),
-                            AppText.caption(
-                              'Share your current location with the question',
-                              color: AppColors.textSecondary,
+                          color: isDark
+                              ? Colors.black.withOpacity(0.5)
+                              : Colors.white.withOpacity(0.9),
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
                             ),
                           ],
                         ),
+                        child: Icon(
+                          Icons.arrow_back,
+                          color: isDark ? Colors.white : Colors.black87,
+                        ),
                       ),
-                      Switch(
-                        value: askState.includeLocation,
-                        onChanged: (_) => askController.toggleIncludeLocation(),
-                        activeColor: AppColors.primary,
+                    ),
+                    const Spacer(),
+                    // Radius badge
+                    AskRadiusBadge(radiusText: askState.radiusFormatted),
+                  ],
+                ),
+              ),
+            ),
+
+            // Error snackbar
+            if (askState.error != null)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 80,
+                left: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline, color: Colors.white),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          askState.error!,
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                      GestureDetector(
+                        onTap: () => askController.setError(null),
+                        child: const Icon(Icons.close, color: Colors.white),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 32),
+              ),
 
-                // Submit button
-                AppButton.primary(
-                  text: 'Post Question',
-                  onPressed: _handleSubmit,
-                  size: AppButtonSize.large,
-                  width: double.infinity,
-                  icon: Icons.send,
-                ),
-                const SizedBox(height: 16),
-
-                // Guidelines
-                const QuestionGuidelines(),
-                const SizedBox(height: 32),
-              ],
+            // Bottom sheet
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: AskQuestionSheet(
+                question: askState.question,
+                radiusMeters: askState.radiusMeters,
+                radiusPercent: askState.radiusPercent,
+                isAnonymous: askState.isAnonymous,
+                isValid: askState.isQuestionValid,
+                onQuestionChanged: askController.setQuestion,
+                onRadiusChanged: askController.setRadiusFromSlider,
+                onAnonymousToggle: askController.toggleAnonymous,
+                onSubmit: _handleSubmit,
+                onClose: () => Navigator.pop(context),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
